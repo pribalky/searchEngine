@@ -43,3 +43,4 @@ jobs:
           git add data/seen_jobs.json reports/
           git diff --cached --quiet || git commit -m "Job search run $(date -u +%Y-%m-%d)"
           git push
+
