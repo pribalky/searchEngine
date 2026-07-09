@@ -1,7 +1,12 @@
 name: Job Search Pipeline
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the every-other-day gap check (useful for manual testing)"
+        type: boolean
+        default: false
   # Enable the schedule once your 4 CVs are in cv/ and a manual
   # workflow_dispatch run has been verified. main.py self-checks that at
   # least MIN_DAYS_BETWEEN_RUNS have elapsed, so a daily cron below still
@@ -34,7 +39,7 @@ jobs:
           REED_API_KEY: ${{ secrets.REED_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python -m job_search.main --post-issue
+        run: python -m job_search.main --post-issue ${{ inputs.force && '--force' || '' }}
 
       - name: Commit updated state and report
         run: |
