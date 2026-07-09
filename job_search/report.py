@@ -182,7 +182,13 @@ def build_report(
     verified_records: List[dict],
     excluded_count: int,
     cvs_loaded: int,
+    total_verified_count: int = None,
 ) -> str:
+    """verified_records is what gets rendered in every table/section. Pass
+    total_verified_count separately when the caller has already dropped
+    "Skip"-decision records before calling this, so the header can still
+    report the true total scored this run."""
+    total_verified_count = total_verified_count if total_verified_count is not None else len(verified_records)
     master = _sorted_master(verified_records)
     by_fit = sorted(verified_records, key=lambda r: r["score"].overall_fit, reverse=True)[:10]
     by_interview = sorted(verified_records, key=lambda r: r["score"].interview_probability, reverse=True)[:10]
@@ -201,7 +207,8 @@ def build_report(
         f"posted-date window and a live HTTP check on the application link. Scoring is "
         f"rule-based keyword overlap against your CV(s), not LLM reasoning -- treat scores "
         f"as directional, not authoritative.",
-        f"\n**Verified vacancies:** {len(verified_records)} | **Excluded (failed verification):** "
+        f"\n**Verified vacancies:** {total_verified_count} | **Shown below (Stretch/Apply/Priority "
+        f"Apply only, Skip omitted):** {len(verified_records)} | **Excluded (failed verification):** "
         f"{excluded_count} | **CVs loaded:** {cvs_loaded}",
         "\n## Master Table (sorted by newest, then Interview Probability)",
         render_table(master),

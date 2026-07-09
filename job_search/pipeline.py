@@ -70,7 +70,15 @@ def run(
     state_mod.record_run(persisted_state, today_str, "success", len(verified))
     state_mod.save(state_path, persisted_state)
 
-    report_markdown = report_mod.build_report(today_str, enriched, len(excluded), len(cvs))
+    # Skip-decision records are still scored and kept in state (so re-runs
+    # keep tracking them and decisions can improve as CVs change), but they
+    # add noise rather than interview opportunities, so they're left out of
+    # the report itself. See config.py for why some generic role families
+    # were removed rather than just relying on this filter alone.
+    report_records = [r for r in enriched if r["score"].decision != "Skip"]
+    report_markdown = report_mod.build_report(
+        today_str, report_records, len(excluded), len(cvs), total_verified_count=len(enriched)
+    )
     report_path = os.path.join(reports_dir, f"{today_str}.md")
     os.makedirs(reports_dir, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:

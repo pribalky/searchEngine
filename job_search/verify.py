@@ -1,11 +1,18 @@
 """Real (non-LLM) verification that a vacancy is live: posted-date window
-check plus an HTTP request confirming the application link resolves."""
+check plus an HTTP request confirming the application link resolves.
+
+Age-window filtering is cheap and done inline; link resolution is a real
+network round trip per posting, so it's parallelized with a thread pool --
+sequential checks across hundreds of postings took ~18 minutes in practice."""
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta
 from typing import List, Tuple
 
 import requests
 
 from .sources.base import JobPosting
+
+DEFAULT_MAX_WORKERS = 20
 
 
 def is_within_age_window(posted_date: str, max_days_old: int, today: date = None) -> bool:
@@ -43,18 +50,31 @@ def verify_postings(
     timeout: int,
     session: requests.Session = None,
     today: date = None,
+    max_workers: int = DEFAULT_MAX_WORKERS,
 ) -> Tuple[List[JobPosting], List[Tuple[JobPosting, str]]]:
     """Returns (verified, excluded) where excluded is a list of
     (posting, reason) pairs so the caller/report can be transparent about
     what was dropped and why."""
-    verified = []
-    excluded = []
+    excluded: List[Tuple[JobPosting, str]] = []
+    candidates: List[JobPosting] = []
     for posting in postings:
         if not is_within_age_window(posting.posted_date, max_days_old, today=today):
             excluded.append((posting, "posted date outside verification window or missing"))
-            continue
-        if not link_resolves(posting.url, timeout, session=session):
-            excluded.append((posting, "application link did not resolve"))
-            continue
-        verified.append(posting)
+        else:
+            candidates.append(posting)
+
+    verified: List[JobPosting] = []
+    if candidates:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_posting = {
+                executor.submit(link_resolves, posting.url, timeout, session): posting
+                for posting in candidates
+            }
+            for future in as_completed(future_to_posting):
+                posting = future_to_posting[future]
+                if future.result():
+                    verified.append(posting)
+                else:
+                    excluded.append((posting, "application link did not resolve"))
+
     return verified, excluded

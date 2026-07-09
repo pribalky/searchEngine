@@ -34,10 +34,15 @@ ROLE_FAMILIES = [
     "Business Architecture",
     "Director of Architecture",
     "Head of Architecture",
-    "Product Owner",
-    "Program Manager",
-    "Process Analyst",
 ]
+
+# Excluded from ROLE_FAMILIES: "Product Owner", "Program Manager", "Process
+# Analyst" were in the original prompt's list but are generic job titles
+# used across the entire UK market, not specific to an architecture/
+# governance background. Searching them broadened results ~10x while
+# adding almost no relevant matches (a live run scored 86% of the results
+# they contributed as "Skip") -- directly against the "optimise for
+# interview probability, not job count" objective.
 
 # Named priority employers, tagged by sector tier. Used to flag (not filter)
 # results, since MVP discovery is via job-board APIs rather than scraping

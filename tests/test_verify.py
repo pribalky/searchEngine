@@ -56,3 +56,31 @@ def test_verify_postings_excludes_old_and_dead():
 
     assert [p.source_id for p in verified] == ["1"]
     assert {p.source_id for p, _ in excluded} == {"2", "3"}
+
+
+def test_verify_postings_concurrent_verification_is_correct():
+    """Link resolution runs on a thread pool -- verify it still produces
+    the right verified/excluded split with many postings in flight at once."""
+    today = date(2026, 7, 9)
+    good_urls = {f"https://good.example/{i}": 200 for i in range(30)}
+    dead_urls = {f"https://dead.example/{i}": 404 for i in range(20)}
+    session = FakeSession({**good_urls, **dead_urls})
+
+    postings = [
+        JobPosting(
+            source="adzuna", source_id=f"good-{i}", title="T", company="C", location="L",
+            description="d", url=f"https://good.example/{i}", posted_date="2026-07-01",
+        )
+        for i in range(30)
+    ] + [
+        JobPosting(
+            source="adzuna", source_id=f"dead-{i}", title="T", company="C", location="L",
+            description="d", url=f"https://dead.example/{i}", posted_date="2026-07-01",
+        )
+        for i in range(20)
+    ]
+
+    verified, excluded = verify_postings(postings, max_days_old=45, timeout=5, session=session, today=today)
+
+    assert {p.source_id for p in verified} == {f"good-{i}" for i in range(30)}
+    assert {p.source_id for p, _ in excluded} == {f"dead-{i}" for i in range(20)}

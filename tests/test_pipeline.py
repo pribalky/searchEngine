@@ -155,3 +155,35 @@ def test_pipeline_revalidates_previously_seen_jobs(tmp_path):
         force=True,
     )
     assert third["verified_count"] == 0
+
+
+def test_pipeline_report_omits_skip_decisions_but_state_keeps_everything(tmp_path):
+    """With a CV that doesn't match any of the fixture postings, every
+    posting should score as 'Skip' -- state should still track all of them
+    (for re-validation), but the report/issue body should show none, while
+    still reporting the true total in its header stats."""
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    (cv_dir / "unrelated.md").write_text("Career history in retail management and logistics.")
+
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+    )
+
+    assert result["verified_count"] == 3
+    assert all(r["score"].decision == "Skip" for r in result["enriched"])
+    assert "Verified vacancies:** 3" in result["report_markdown"]
+    assert "Shown below (Stretch/Apply/Priority Apply only, Skip omitted):** 0" in result["report_markdown"]
+
+    with open(state_path, encoding="utf-8") as f:
+        state = json.load(f)
+    assert len(state["jobs"]) == 3
