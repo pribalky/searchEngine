@@ -1,0 +1,35 @@
+[
+  {
+    "source": "adzuna",
+    "source_id": "1001",
+    "title": "Enterprise Architect",
+    "company": "Barclays",
+    "location": "London, UK",
+    "description": "We are looking for an Enterprise Architect with experience in Architecture Governance, Design Authority, Technology Strategy and Stakeholder Management. Essential: TOGAF certification, Banking experience required.",
+    "url": "https://www.adzuna.co.uk/",
+    "posted_date": "2026-07-05",
+    "salary_raw": "90000-110000"
+  },
+  {
+    "source": "adzuna",
+    "source_id": "1002",
+    "title": "Technology Governance Lead",
+    "company": "Random Fintech Ltd",
+    "location": "Remote, UK",
+    "description": "Technology Governance Lead role, remote working, visa sponsorship available. Essential: Technology Governance, Technical Leadership experience.",
+    "url": "https://www.adzuna.co.uk/",
+    "posted_date": "2026-06-20",
+    "salary_raw": null
+  },
+  {
+    "source": "adzuna",
+    "source_id": "1003",
+    "title": "Head of Architecture",
+    "company": "Old Corp",
+    "location": "Manchester, UK",
+    "description": "Head of Architecture position posted a long time ago, should be excluded by the age-window check.",
+    "url": "https://www.adzuna.co.uk/",
+    "posted_date": "2026-01-01",
+    "salary_raw": null
+  }
+]

@@ -1,0 +1,45 @@
+name: Job Search Pipeline
+
+on:
+  workflow_dispatch: {}
+  # Enable the schedule once your 4 CVs are in cv/ and a manual
+  # workflow_dispatch run has been verified. main.py self-checks that at
+  # least MIN_DAYS_BETWEEN_RUNS have elapsed, so a daily cron below still
+  # yields an "every other day" cadence without the day-of-month reset
+  # problems of `*/2` cron syntax.
+  # schedule:
+  #   - cron: "0 7 * * *"
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  run-job-search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run job search pipeline
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python -m job_search.main --post-issue
+
+      - name: Commit updated state and report
+        run: |
+          git config user.name "job-search-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/seen_jobs.json reports/
+          git diff --cached --quiet || git commit -m "Job search run $(date -u +%Y-%m-%d)"
+          git push

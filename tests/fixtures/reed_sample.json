@@ -1,0 +1,24 @@
+[
+  {
+    "source": "reed",
+    "source_id": "2001",
+    "title": "Business Architect",
+    "company": "Deloitte",
+    "location": "London, Hybrid",
+    "description": "Business Architect, Consulting background preferred, hybrid working. Essential: Business Architecture, Stakeholder Management. Cannot sponsor visas.",
+    "url": "https://www.reed.co.uk/",
+    "posted_date": "2026-07-08",
+    "salary_raw": "100000-120000"
+  },
+  {
+    "source": "reed",
+    "source_id": "1001",
+    "title": "Enterprise Architect",
+    "company": "Barclays",
+    "location": "London, UK",
+    "description": "Duplicate of the Adzuna Barclays Enterprise Architect role, cross-posted on Reed, should be merged by dedupe.",
+    "url": "https://www.reed.co.uk/",
+    "posted_date": "2026-07-04",
+    "salary_raw": null
+  }
+]
