@@ -238,3 +238,66 @@ def test_pipeline_degrades_gracefully_when_sponsor_fetch_fails(tmp_path):
     assert result["skipped"] is False
     assert any("sponsor register fetch failed" in e for e in result["fetch_errors"])
     assert all(r["visa"].startswith("Unknown (registry unavailable") for r in result["enriched"])
+
+
+def test_pipeline_dedupes_revalidated_jobs_against_fresh_fetch(tmp_path):
+    """Reproduces the real duplicate seen in production: the same role at
+    the same company posted under two different Adzuna listing ids (e.g.
+    re-posted at a different office location). One id shows up in today's
+    fresh fetch; the other only survives via state re-validation from a
+    prior run. They should still collapse to a single report row."""
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+
+    def make_amex_posting(source_id, location, posted_date):
+        return JobPosting(
+            source="adzuna",
+            source_id=source_id,
+            title="Director - Enterprise Business Architecture",
+            company="American Express",
+            location=location,
+            description="Enterprise Business Architecture leadership role.",
+            url=f"https://www.adzuna.co.uk/jobs/details/{source_id}",
+            posted_date=posted_date,
+        )
+
+    def day1_sources():
+        def adzuna_search(keyword):
+            return [make_amex_posting("amex-1", "Burgess Hill", "2026-07-02")]
+
+        return [adzuna_search]
+
+    def day2_sources():
+        def adzuna_search(keyword):
+            # amex-1 has dropped out of today's search results, but a new
+            # listing id for the same role at a different location shows up.
+            return [make_amex_posting("amex-2", "London", "2026-07-05")]
+
+        return [adzuna_search]
+
+    first = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=day1_sources(),
+        role_families=["Director of Architecture"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 2),
+    )
+    assert first["verified_count"] == 1
+
+    second = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=day2_sources(),
+        role_families=["Director of Architecture"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 5),
+        force=True,
+    )
+
+    assert second["verified_count"] == 1  # collapsed, not 2
+    assert len({r["posting"].company for r in second["enriched"]}) == 1

@@ -7,13 +7,12 @@ on:
         description: "Bypass the every-other-day gap check (useful for manual testing)"
         type: boolean
         default: false
-  # Enable the schedule once your 4 CVs are in cv/ and a manual
-  # workflow_dispatch run has been verified. main.py self-checks that at
-  # least MIN_DAYS_BETWEEN_RUNS have elapsed, so a daily cron below still
-  # yields an "every other day" cadence without the day-of-month reset
-  # problems of `*/2` cron syntax.
-  # schedule:
-  #   - cron: "0 7 * * *"
+  # Runs daily; main.py self-checks that at least MIN_DAYS_BETWEEN_RUNS
+  # (2) have elapsed since the last successful run, so this yields a true
+  # "every other day" cadence without the day-of-month reset problems of
+  # `*/2` cron syntax. 07:00 UTC.
+  schedule:
+    - cron: "0 7 * * *"
 
 permissions:
   contents: write

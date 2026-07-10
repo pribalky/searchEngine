@@ -67,7 +67,12 @@ def run(
     revalidated = _revalidate_stored_jobs(
         persisted_state, fresh_keys, max_days_old, verify_timeout, http_session, today
     )
-    verified.extend(revalidated)
+    # Re-validated postings are only checked against fresh ones by exact
+    # source:id key, not by company+title, so the same role listed under a
+    # different source id (e.g. re-posted at another Adzuna location) can
+    # slip through as a near-duplicate. Dedupe the combined set again to
+    # collapse those.
+    verified = dedupe_mod.dedupe(verified + revalidated)
 
     enriched = [_enrich(p, cvs, sponsor_names, max_days_old, today) for p in verified]
 
