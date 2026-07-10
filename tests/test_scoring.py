@@ -63,6 +63,40 @@ def test_architecture_titled_role_is_unaffected_by_anchor_gate():
     assert result.decision in {"Priority Apply", "Apply", "Apply after tailoring", "Stretch", "Skip"}
 
 
+def test_seniority_gap_applies_modest_penalty_not_hard_veto():
+    """A title several levels above the user's current one (Associate
+    Architect) should score lower than an equivalent-content role at
+    their level, but should NOT be automatically excluded from Apply/
+    Priority Apply -- title seniority doesn't always track real
+    responsibilities."""
+    strong_cv = (
+        "Enterprise Architecture, Architecture Governance, Design Authority, "
+        "Stakeholder Management and Technology Strategy experience across Banking."
+    )
+    description = (
+        "Architecture Governance, Design Authority and Technology Strategy role. "
+        "Essential: Stakeholder Management."
+    )
+
+    same_level = score_posting("Solution Architect", description, {"cv": strong_cv})
+    big_stretch = score_posting("Head of Architecture", description, {"cv": strong_cv})
+
+    assert same_level.seniority_gap == 0
+    assert same_level.career_stretch_level == "At or below current level"
+    assert big_stretch.seniority_gap == 3
+    assert big_stretch.career_stretch_level == "Major stretch (+3+ levels)"
+
+    # Modest penalty: lower score, but not necessarily knocked out of contention.
+    assert big_stretch.interview_probability < same_level.interview_probability
+    assert same_level.interview_probability - big_stretch.interview_probability == 27  # 3 levels * 9 points
+
+
+def test_unmatched_title_gets_no_seniority_penalty():
+    result = score_posting("AI Governance Lead", JD_DESCRIPTION, {"cv": "AI Governance experience."})
+    assert result.seniority_gap is None
+    assert result.career_stretch_level == "Unclear"
+
+
 def test_decision_thresholds_are_consistent_with_probability():
     strong_cv = (
         "Enterprise Architecture, Business Architecture, Solution Architecture, Architecture Governance, "

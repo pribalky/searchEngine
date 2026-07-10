@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from . import config
+from . import config, seniority
 
 WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z\-]+")
 
@@ -23,6 +23,8 @@ class ScoreResult:
     missing_keywords: List[str]
     rewrite_effort: str
     decision: str
+    seniority_gap: Optional[int]
+    career_stretch_level: str
 
 
 def _tokenize(text: str):
@@ -119,8 +121,10 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
     hm_pct, _, _ = _keyword_overlap_pct(requirements_text, cv_text_for_best, config.PROFILE_KEYWORDS)
 
     overall_fit = round(best_ats * 0.4 + recruiter_pct * 0.3 + hm_pct * 0.3)
-    penalty = min(40, len(best_missing) * 5)
-    interview_probability = max(0, overall_fit - penalty)
+    keyword_penalty = min(40, len(best_missing) * 5)
+    seniority_gap = seniority.compute_gap(title)
+    seniority_penalty = seniority.penalty_points(seniority_gap)
+    interview_probability = max(0, overall_fit - keyword_penalty - seniority_penalty)
     has_anchor = _has_anchor_keyword(jd_text)
 
     return ScoreResult(
@@ -133,4 +137,6 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
         missing_keywords=best_missing,
         rewrite_effort=_rewrite_effort(len(best_missing)),
         decision=_decision(interview_probability, has_anchor),
+        seniority_gap=seniority_gap,
+        career_stretch_level=seniority.stretch_label(seniority_gap),
     )

@@ -3,7 +3,17 @@ from job_search.scoring import ScoreResult
 from job_search.sources.base import JobPosting
 
 
-def make_record(title, company, decision="Apply", interview_probability=80, overall_fit=80, sector="Banking", days_left=None):
+def make_record(
+    title,
+    company,
+    decision="Apply",
+    interview_probability=80,
+    overall_fit=80,
+    sector="Banking",
+    days_left=None,
+    seniority_gap=0,
+    career_stretch_level="At or below current level",
+):
     posting = JobPosting(
         source="adzuna",
         source_id=title,
@@ -24,6 +34,8 @@ def make_record(title, company, decision="Apply", interview_probability=80, over
         missing_keywords=["Responsible AI"],
         rewrite_effort="Minor (30 mins)",
         decision=decision,
+        seniority_gap=seniority_gap,
+        career_stretch_level=career_stretch_level,
     )
     return {
         "posting": posting,
@@ -32,7 +44,7 @@ def make_record(title, company, decision="Apply", interview_probability=80, over
         "role_categories": ["Governance Roles", "Design Authority Roles"],
         "work_pattern": "Hybrid",
         "visa": "Unclear",
-        "stretch": "Core",
+        "stretch": career_stretch_level,
         "days_left": days_left,
     }
 

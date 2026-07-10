@@ -55,14 +55,6 @@ def tag_visa_sponsorship(company: str, description: str, sponsor_names: Optional
     return "Unknown (registry unavailable)"
 
 
-def tag_career_stretch(title: str) -> str:
-    title_lower = (title or "").lower()
-    stretch_signals = ["director", "head of", "vp", "vice president"]
-    if any(s in title_lower for s in stretch_signals):
-        return "Stretch"
-    return "Core"
-
-
 def compute_days_left(posted_date: str, max_days_old: int, today: Optional[date] = None) -> Optional[int]:
     """Days remaining before a posting ages out of the verification window
     (config.MAX_POSTING_AGE_DAYS) -- the closest proxy available to a real

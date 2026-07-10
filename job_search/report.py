@@ -19,6 +19,7 @@ TABLE_COLUMNS = [
     "Recruiter Match",
     "Hiring Manager Match",
     "Interview Probability",
+    "Career Stretch",
     "Why It Matches",
     "Key Gaps",
     "CV Version",
@@ -62,6 +63,7 @@ def _row(record: dict) -> List[str]:
         str(score.recruiter_match),
         str(score.hiring_manager_match),
         str(score.interview_probability),
+        score.career_stretch_level,
         _why_it_matches(record),
         _key_gaps(record),
         score.best_cv or "New tailored version required",
@@ -218,7 +220,7 @@ def build_report(
     consulting = [r for r in verified_records if r["sector"] == "Consulting"]
     visa_friendly = [r for r in verified_records if r["visa"] == "Registered Sponsor"]
     remote_hybrid = [r for r in verified_records if r["work_pattern"] in ("Remote", "Hybrid")]
-    stretch = [r for r in verified_records if r["stretch"] == "Stretch"]
+    stretch = [r for r in verified_records if r["score"].seniority_gap is not None and r["score"].seniority_gap >= 1]
 
     parts = [
         "# UK Technology Leadership Job Search Report",

@@ -127,7 +127,7 @@ def _enrich(posting: JobPosting, cvs, sponsor_names: Set[str], max_days_old: int
         "role_categories": tagging.tag_role_categories(posting.title, posting.description),
         "work_pattern": tagging.tag_work_pattern(posting.description),
         "visa": tagging.tag_visa_sponsorship(posting.company, posting.description, sponsor_names),
-        "stretch": tagging.tag_career_stretch(posting.title),
+        "stretch": score.career_stretch_level,
         "days_left": tagging.compute_days_left(posting.posted_date, max_days_old, today),
     }
 

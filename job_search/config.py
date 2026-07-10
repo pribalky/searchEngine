@@ -108,6 +108,32 @@ MAX_POSTING_AGE_DAYS = 45
 # application deadlines.
 URGENT_DAYS_THRESHOLD = 10
 
+# Seniority ladder for architecture-track titles, ordered low to high.
+# Matched against job titles only (descriptions are too noisy -- "reports
+# to the Head of Engineering" would falsely inflate level). Checked from
+# the highest level down so a compound title like "Head of Enterprise
+# Architecture" resolves to the more senior descriptor ("Head of") rather
+# than the lower one ("Enterprise Architecture") it also contains.
+#
+# Calibrated against the user's actual current role (Associate Architect)
+# rather than a generic ladder: their title reads junior but the
+# responsibilities already sit at Architect/Solution Architect/Business
+# Architect level, so those are grouped as the same (current) level.
+SENIORITY_LADDER = {
+    0: ["Associate Architect", "Solution Architect", "Business Architect", "Architect"],
+    1: ["Senior Architect", "Lead Architect", "Principal Architect"],
+    2: ["Enterprise Architect", "Domain Architect"],
+    3: ["Head of Architecture", "Director of Architecture", "Head of", "Director"],
+    4: ["VP", "Vice President"],
+}
+CURRENT_SENIORITY_LEVEL = 0
+
+# Points shaved off Interview Probability per seniority level above the
+# user's current one. Deliberately modest (not a hard veto): a bigger
+# title doesn't always mean bigger real responsibilities, so a 2-level
+# jump should score lower, not vanish from Priority Apply/Apply entirely.
+SENIORITY_LEVEL_PENALTY = 9
+
 # Minimum gap (in days) between scheduled runs, enforced by main.py rather
 # than relying purely on cron scheduling semantics.
 MIN_DAYS_BETWEEN_RUNS = 2

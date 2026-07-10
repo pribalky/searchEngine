@@ -33,11 +33,6 @@ def test_tag_visa_sponsorship_falls_back_to_weak_guess_when_registry_unavailable
     assert tagging.tag_visa_sponsorship("Barclays", "No mention either way", None) == "Unknown (registry unavailable)"
 
 
-def test_tag_career_stretch():
-    assert tagging.tag_career_stretch("Director of Architecture") == "Stretch"
-    assert tagging.tag_career_stretch("Enterprise Architect") == "Core"
-
-
 def test_compute_days_left():
     today = date(2026, 7, 9)
     assert tagging.compute_days_left("2026-07-09", 45, today=today) == 45
