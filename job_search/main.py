@@ -13,7 +13,7 @@ from dataclasses import replace
 
 import requests
 
-from . import config, pipeline
+from . import config, pipeline, sponsors
 from .sources.adzuna import AdzunaClient
 from .sources.reed import ReedClient
 from .sources.base import JobPosting
@@ -77,6 +77,10 @@ def build_fixture_sources():
     return [adzuna_search, reed_search]
 
 
+def fetch_live_sponsor_names():
+    return sponsors.fetch_sponsor_names(session=requests.Session(), timeout=30)
+
+
 def post_github_issue(title: str, body: str, report_path: str) -> None:
     token = os.environ.get("GITHUB_TOKEN")
     repo = os.environ.get("GITHUB_REPOSITORY")
@@ -112,6 +116,9 @@ def main():
     args = parser.parse_args()
 
     sources = build_fixture_sources() if args.fixtures else build_live_sources()
+    # Fixture/demo mode stays fully network-free; the real sponsor registry
+    # lookup only runs against live data.
+    sponsor_names_fetcher = None if args.fixtures else fetch_live_sponsor_names
 
     result = pipeline.run(
         cv_dir=CV_DIR,
@@ -119,6 +126,7 @@ def main():
         reports_dir=REPORTS_DIR,
         sources=sources,
         force=args.force,
+        sponsor_names_fetcher=sponsor_names_fetcher,
     )
 
     if result["skipped"]:

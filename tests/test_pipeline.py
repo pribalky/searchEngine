@@ -187,3 +187,54 @@ def test_pipeline_report_omits_skip_decisions_but_state_keeps_everything(tmp_pat
     with open(state_path, encoding="utf-8") as f:
         state = json.load(f)
     assert len(state["jobs"]) == 3
+
+
+def test_pipeline_wires_sponsor_registry_into_visa_tag(tmp_path):
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    (cv_dir / "architecture_governance.md").write_text(
+        "Enterprise Architecture, Architecture Governance, Design Authority, "
+        "Technology Strategy, Stakeholder Management, Banking experience."
+    )
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+        sponsor_names_fetcher=lambda: {"barclays bank"},
+    )
+
+    by_company = {r["posting"].company: r["visa"] for r in result["enriched"]}
+    assert by_company["Barclays"] == "Registered Sponsor"
+    assert by_company["Deloitte"] == "Not Registered"
+
+
+def test_pipeline_degrades_gracefully_when_sponsor_fetch_fails(tmp_path):
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+
+    def failing_fetcher():
+        raise RuntimeError("gov.uk page structure changed")
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+        sponsor_names_fetcher=failing_fetcher,
+    )
+
+    assert result["skipped"] is False
+    assert any("sponsor register fetch failed" in e for e in result["fetch_errors"])
+    assert all(r["visa"].startswith("Unknown (registry unavailable") for r in result["enriched"])

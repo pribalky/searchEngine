@@ -102,6 +102,12 @@ PROFILE_KEYWORDS = [
 # Vacancies older than this are excluded regardless of source.
 MAX_POSTING_AGE_DAYS = 45
 
+# A posting with fewer days left than this before it ages out of the
+# verification window is flagged as urgent -- the closest proxy available
+# to "apply before this goes stale" since job boards don't expose real
+# application deadlines.
+URGENT_DAYS_THRESHOLD = 10
+
 # Minimum gap (in days) between scheduled runs, enforced by main.py rather
 # than relying purely on cron scheduling semantics.
 MIN_DAYS_BETWEEN_RUNS = 2
@@ -150,10 +156,28 @@ SENIOR_TITLE_SIGNALS = [
     "Director",
     "Head of",
     "Principal",
-    "Lead",
     "Senior Manager",
     "VP",
     "Vice President",
+]
+# "Lead" was deliberately dropped: as a single generic word it appears in
+# almost any CV ("led a team", "technical leadership") and any job title
+# ("Technical Lead", "Lead Data Engineer"), so it inflated recruiter-match
+# scores for roles with nothing to do with architecture/governance.
+
+# A vacancy can't be a genuine architecture/governance match without at
+# least one of these appearing -- used as a hard gate on Priority
+# Apply/Apply decisions so generic engineering-leadership titles (e.g.
+# "Technical Motor Claims Lead") can't outscore real architecture roles
+# just from incidental keyword overlap elsewhere in the JD.
+CORE_ANCHOR_KEYWORDS = [
+    "Architect",
+    "Architecture",
+    "Design Authority",
+    "Technology Strategy",
+    "Technology Governance",
+    "AI Governance",
+    "Business Architecture",
 ]
 
 # Role-category tagging rules: report section name -> keywords matched

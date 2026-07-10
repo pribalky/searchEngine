@@ -3,7 +3,7 @@ score -> tag -> persist state -> render report."""
 import os
 from dataclasses import asdict
 from datetime import date
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Set
 
 import requests
 
@@ -24,6 +24,7 @@ def run(
     http_session: Optional[requests.Session] = None,
     today: Optional[date] = None,
     force: bool = False,
+    sponsor_names_fetcher: Optional[Callable[[], Set[str]]] = None,
 ) -> dict:
     today = today or date.today()
     today_str = today.isoformat()
@@ -41,8 +42,15 @@ def run(
 
     cvs = cv_loader.load_cvs(cv_dir)
 
-    raw_postings: List[JobPosting] = []
     fetch_errors: List[str] = []
+    sponsor_names: Set[str] = set()
+    if sponsor_names_fetcher is not None:
+        try:
+            sponsor_names = sponsor_names_fetcher()
+        except Exception as exc:  # external data source; degrade to "Unknown" rather than crash the run
+            fetch_errors.append(f"sponsor register fetch failed: {exc}")
+
+    raw_postings: List[JobPosting] = []
     for source_fn in sources:
         for role_family in role_families:
             try:
@@ -61,7 +69,7 @@ def run(
     )
     verified.extend(revalidated)
 
-    enriched = [_enrich(p, cvs) for p in verified]
+    enriched = [_enrich(p, cvs, sponsor_names, max_days_old, today) for p in verified]
 
     for record in enriched:
         posting = record["posting"]
@@ -110,7 +118,7 @@ def _revalidate_stored_jobs(persisted_state, fresh_keys, max_days_old, verify_ti
     return revalidated
 
 
-def _enrich(posting: JobPosting, cvs) -> dict:
+def _enrich(posting: JobPosting, cvs, sponsor_names: Set[str], max_days_old: int, today: date) -> dict:
     score = scoring.score_posting(posting.title, posting.description, cvs)
     return {
         "posting": posting,
@@ -118,8 +126,9 @@ def _enrich(posting: JobPosting, cvs) -> dict:
         "sector": tagging.tag_sector(posting.company),
         "role_categories": tagging.tag_role_categories(posting.title, posting.description),
         "work_pattern": tagging.tag_work_pattern(posting.description),
-        "visa": tagging.tag_visa_sponsorship(posting.description),
+        "visa": tagging.tag_visa_sponsorship(posting.company, posting.description, sponsor_names),
         "stretch": tagging.tag_career_stretch(posting.title),
+        "days_left": tagging.compute_days_left(posting.posted_date, max_days_old, today),
     }
 
 

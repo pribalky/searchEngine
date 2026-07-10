@@ -1,4 +1,8 @@
+from datetime import date, datetime
+from typing import Optional, Set
+
 from . import config
+from .sponsors import is_registered_sponsor
 
 
 def tag_sector(company: str) -> str:
@@ -34,13 +38,21 @@ def tag_work_pattern(description: str) -> str:
     return "Unknown"
 
 
-def tag_visa_sponsorship(description: str) -> str:
+def tag_visa_sponsorship(company: str, description: str, sponsor_names: Optional[Set[str]] = None) -> str:
+    """Primary signal is a real cross-check against the UK Home Office's
+    published Register of Licensed Sponsors (see sponsors.py) -- a keyword
+    guess against job description text is not a substitute for "known
+    sponsor". Falls back to a clearly-labelled weak guess only when the
+    registry couldn't be fetched this run."""
+    if sponsor_names:
+        return "Registered Sponsor" if is_registered_sponsor(company, sponsor_names) else "Not Registered"
+
     text = (description or "").lower()
     if any(p in text for p in config.VISA_NEGATIVE_PHRASES):
-        return "Unlikely"
+        return "Unknown (registry unavailable; JD says no sponsorship)"
     if any(p in text for p in config.VISA_POSITIVE_PHRASES):
-        return "Likely"
-    return "Unclear"
+        return "Unknown (registry unavailable; JD suggests sponsorship)"
+    return "Unknown (registry unavailable)"
 
 
 def tag_career_stretch(title: str) -> str:
@@ -49,3 +61,19 @@ def tag_career_stretch(title: str) -> str:
     if any(s in title_lower for s in stretch_signals):
         return "Stretch"
     return "Core"
+
+
+def compute_days_left(posted_date: str, max_days_old: int, today: Optional[date] = None) -> Optional[int]:
+    """Days remaining before a posting ages out of the verification window
+    (config.MAX_POSTING_AGE_DAYS) -- the closest proxy available to a real
+    application deadline, since job boards don't expose one. Returns None
+    if posted_date is missing/unparseable."""
+    if not posted_date:
+        return None
+    today = today or date.today()
+    try:
+        posted = datetime.strptime(posted_date, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    days_since_posted = (today - posted).days
+    return max_days_old - days_since_posted

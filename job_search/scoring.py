@@ -63,17 +63,30 @@ def _rewrite_effort(missing_count: int) -> str:
     return config.REWRITE_EFFORT_BUCKETS[-1][1]
 
 
-def _decision(interview_probability: int) -> str:
+def _decision(interview_probability: int, has_anchor: bool) -> str:
     t = config.DECISION_THRESHOLDS
     if interview_probability >= t["priority_apply"]:
-        return "Priority Apply"
-    if interview_probability >= t["apply"]:
-        return "Apply"
-    if interview_probability >= t["apply_after_tailoring"]:
-        return "Apply after tailoring"
-    if interview_probability >= t["stretch"]:
+        decision = "Priority Apply"
+    elif interview_probability >= t["apply"]:
+        decision = "Apply"
+    elif interview_probability >= t["apply_after_tailoring"]:
+        decision = "Apply after tailoring"
+    elif interview_probability >= t["stretch"]:
+        decision = "Stretch"
+    else:
+        return "Skip"
+
+    if not has_anchor and decision in ("Priority Apply", "Apply", "Apply after tailoring"):
+        # High numeric score but no architecture/governance-specific term
+        # anywhere in the JD -- almost certainly a false positive from
+        # incidental keyword overlap, not a genuine match.
         return "Stretch"
-    return "Skip"
+    return decision
+
+
+def _has_anchor_keyword(jd_text: str) -> bool:
+    text = jd_text.lower()
+    return any(kw.lower() in text for kw in config.CORE_ANCHOR_KEYWORDS)
 
 
 def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreResult:
@@ -108,6 +121,7 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
     overall_fit = round(best_ats * 0.4 + recruiter_pct * 0.3 + hm_pct * 0.3)
     penalty = min(40, len(best_missing) * 5)
     interview_probability = max(0, overall_fit - penalty)
+    has_anchor = _has_anchor_keyword(jd_text)
 
     return ScoreResult(
         overall_fit=overall_fit,
@@ -118,5 +132,5 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
         best_cv=best_cv,
         missing_keywords=best_missing,
         rewrite_effort=_rewrite_effort(len(best_missing)),
-        decision=_decision(interview_probability),
+        decision=_decision(interview_probability, has_anchor),
     )
