@@ -97,6 +97,48 @@ def test_unmatched_title_gets_no_seniority_penalty():
     assert result.career_stretch_level == "Unclear"
 
 
+def test_ats_match_weights_responsibility_evidence_over_title_mention():
+    """The core ask: a keyword mentioned only in a CV job-title header
+    should score (and count as a gap) worse than the same keyword backed
+    by an actual demonstrated-responsibility bullet."""
+    jd_title = "Enterprise Architect"
+    jd_description = "We need Design Authority and Technology Strategy experience. Essential: Architecture Governance."
+
+    title_only_cv = (
+        "PROFESSIONAL EXPERIENCE\n"
+        "Design Authority & Technology Strategy Lead | SomeCo, UK 2020 - 2022\n"
+        "Delivered unrelated day-to-day support tickets and general admin tasks.\n"
+    )
+    responsibility_backed_cv = (
+        "PROFESSIONAL EXPERIENCE\n"
+        "Consultant | SomeCo, UK 2020 - 2022\n"
+        "Delivered Design Authority governance and shaped Technology Strategy roadmaps, "
+        "embedding Architecture Governance controls across delivery teams.\n"
+    )
+
+    title_only_result = score_posting(jd_title, jd_description, {"cv": title_only_cv})
+    responsibility_result = score_posting(jd_title, jd_description, {"cv": responsibility_backed_cv})
+
+    assert responsibility_result.ats_match > title_only_result.ats_match
+    assert "Design Authority" in title_only_result.missing_keywords
+    assert "Design Authority" not in responsibility_result.missing_keywords
+    assert responsibility_result.ats_match == 100
+    assert title_only_result.ats_match == 17  # 2 of 3 keywords at 0.25 partial credit
+
+
+def test_recruiter_match_only_considers_cv_title_lines():
+    cv_with_matching_title_but_no_responsibility_overlap = (
+        "PROFESSIONAL EXPERIENCE\n"
+        "Enterprise Architect | SomeCo, UK 2020 - 2022\n"
+        "Unrelated day-to-day admin work.\n"
+    )
+    result = score_posting(
+        "Enterprise Architect", "Looking for an Enterprise Architect.", {"cv": cv_with_matching_title_but_no_responsibility_overlap}
+    )
+    # Title-line match plus exact role-family bonus should still register.
+    assert result.recruiter_match > 0
+
+
 def test_decision_thresholds_are_consistent_with_probability():
     strong_cv = (
         "Enterprise Architecture, Business Architecture, Solution Architecture, Architecture Governance, "

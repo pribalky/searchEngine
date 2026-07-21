@@ -97,7 +97,40 @@ PROFILE_KEYWORDS = [
     "Banking",
     "Financial Services",
     "Consulting",
+    # Added from real usage patterns in the user's own CVs, rather than
+    # guessed generically -- these are phrases that actually recur across
+    # their CV variants (architecture governance, product ownership).
+    "Feasibility Assessment",
+    "Impact Assessment",
+    "Governance Controls",
+    "Solution Design",
+    "Architecture Review",
+    "Product Ownership",
+    "Definition of Ready",
+    "Delivery Governance",
+    "Technology Risk",
+    "Architecture Standards",
 ]
+
+# Partial credit given when a JD keyword only appears in a CV's job-title
+# text (e.g. a title mentioning "Design Authority") but not backed by any
+# responsibility/achievement bullet. Full credit (1.0) requires the
+# keyword to show up in demonstrated responsibility text instead --
+# titles alone are a weaker, less trustworthy signal of real experience.
+CV_TITLE_MATCH_WEIGHT = 0.25
+
+# Overall Fit blend weights across the three sub-scores. ATS Match and
+# Hiring Manager Match are both responsibility-weighted (see
+# CV_TITLE_MATCH_WEIGHT and score_posting); Recruiter Match is now a pure
+# title-to-title comparison. Recruiter's share is deliberately small so a
+# title mismatch alone (common when a formal job title undersells actual
+# scope -- see the seniority ladder's rationale) can't dominate the score
+# the way it could when these signals were blended together undifferentiated.
+OVERALL_FIT_WEIGHTS = {
+    "ats": 0.45,
+    "recruiter": 0.15,
+    "hiring_manager": 0.40,
+}
 
 # Vacancies older than this are excluded regardless of source.
 MAX_POSTING_AGE_DAYS = 45

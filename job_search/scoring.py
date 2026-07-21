@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from . import config, seniority
+from . import config, cv_parser, seniority
 
 WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z\-]+")
 
@@ -58,6 +58,47 @@ def _extract_requirements_section(description: str) -> str:
     return match.group(0) if match else text[:800]
 
 
+def _extract_responsibilities_section(description: str) -> str:
+    """Best-effort extraction of the 'what you'll do' portion of a JD, to
+    pair against the CV's demonstrated-responsibility text specifically
+    (as opposed to matching against the whole posting, which mixes in
+    boilerplate/company-intro/benefits text)."""
+    text = description or ""
+    match = re.search(
+        r"(responsibilities|what you.?ll do|what you will do|key responsibilities|"
+        r"role overview|about the role|duties)(.{0,800})",
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return match.group(0) if match else text[:800]
+
+
+def _weighted_keyword_match(jd_text: str, titles_text: str, responsibilities_text: str, keywords: List[str]):
+    """Like _keyword_overlap_pct, but a JD keyword only counts as fully
+    matched when it's backed by CV responsibility/achievement text.
+    A title-only mention still counts as "missing" (so gap/rewrite-effort
+    reporting nudges toward adding a demonstrated bullet, not just relying
+    on the title) but earns partial credit toward the score itself, since
+    it's still a weak positive signal."""
+    jd_hits = set(_phrase_hits(jd_text, keywords))
+    if not jd_hits:
+        return 0, jd_hits, []
+
+    resp_hits = set(_phrase_hits(responsibilities_text, keywords))
+    title_hits = set(_phrase_hits(titles_text, keywords))
+
+    weighted_sum = 0.0
+    for kw in jd_hits:
+        if kw in resp_hits:
+            weighted_sum += 1.0
+        elif kw in title_hits:
+            weighted_sum += config.CV_TITLE_MATCH_WEIGHT
+
+    pct = round(100 * weighted_sum / len(jd_hits))
+    missing = sorted(jd_hits - resp_hits)
+    return pct, jd_hits, missing
+
+
 def _rewrite_effort(missing_count: int) -> str:
     for threshold, label in config.REWRITE_EFFORT_BUCKETS:
         if missing_count <= threshold:
@@ -102,25 +143,37 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
     best_cv = None
     best_ats = -1
     best_missing: List[str] = []
+    best_sections = {"titles_text": "", "responsibilities_text": ""}
     for cv_name, cv_text in cvs.items():
-        ats_pct, jd_hits, matched = _keyword_overlap_pct(jd_text, cv_text, config.PROFILE_KEYWORDS)
+        sections = cv_parser.split_cv_sections(cv_text)
+        ats_pct, _, missing = _weighted_keyword_match(
+            jd_text, sections["titles_text"], sections["responsibilities_text"], config.PROFILE_KEYWORDS
+        )
         if ats_pct > best_ats:
             best_ats = ats_pct
             best_cv = None if cv_name == "__profile_only__" else cv_name
-            best_missing = sorted(jd_hits - matched)
+            best_missing = missing
+            best_sections = sections
 
-    cv_text_for_best = cvs.get(best_cv) if best_cv else cvs.get("__profile_only__", "")
-
-    recruiter_pct, _, _ = _keyword_overlap_pct(title, cv_text_for_best, config.SENIOR_TITLE_SIGNALS + config.ROLE_FAMILIES)
-    # Recruiter screens also reward exact role-family title matches.
+    # Recruiter screens compare job titles to job titles -- match against
+    # the CV's title-lines only, not demonstrated-responsibility text.
+    recruiter_pct, _, _ = _keyword_overlap_pct(
+        title, best_sections["titles_text"], config.SENIOR_TITLE_SIGNALS + config.ROLE_FAMILIES
+    )
     title_lower = title.lower()
     if any(rf.lower() in title_lower for rf in config.ROLE_FAMILIES):
         recruiter_pct = min(100, recruiter_pct + 20)
 
+    # Hiring managers screen demonstrated experience against both the
+    # JD's stated requirements and its stated day-to-day duties -- match
+    # both against the CV's responsibility text only (no title credit).
     requirements_text = _extract_requirements_section(description)
-    hm_pct, _, _ = _keyword_overlap_pct(requirements_text, cv_text_for_best, config.PROFILE_KEYWORDS)
+    responsibilities_section = _extract_responsibilities_section(description)
+    hm_jd_text = f"{requirements_text}\n{responsibilities_section}"
+    hm_pct, _, _ = _keyword_overlap_pct(hm_jd_text, best_sections["responsibilities_text"], config.PROFILE_KEYWORDS)
 
-    overall_fit = round(best_ats * 0.4 + recruiter_pct * 0.3 + hm_pct * 0.3)
+    w = config.OVERALL_FIT_WEIGHTS
+    overall_fit = round(best_ats * w["ats"] + recruiter_pct * w["recruiter"] + hm_pct * w["hiring_manager"])
     keyword_penalty = min(40, len(best_missing) * 5)
     seniority_gap = seniority.compute_gap(title)
     seniority_penalty = seniority.penalty_points(seniority_gap)
