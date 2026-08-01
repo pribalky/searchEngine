@@ -64,8 +64,10 @@ def test_pipeline_end_to_end(tmp_path):
     )
 
     assert result["skipped"] is False
-    # Old Corp posting (2026-01-01) must be excluded by the age window;
-    # the Barclays role appears twice (adzuna + reed) and should dedupe to one.
+    # Old Corp posting is excluded (too old, non-commutable Manchester
+    # location, and "Head of Architecture" exceeds the seniority gap cap
+    # -- any one of these would drop it); the Barclays role appears twice
+    # (adzuna + reed) and should dedupe to one.
     assert result["verified_count"] == 3  # Barclays (deduped), Random Fintech, Deloitte
     assert os.path.exists(result["report_path"])
     with open(result["report_path"], encoding="utf-8") as f:
@@ -255,7 +257,7 @@ def test_pipeline_dedupes_revalidated_jobs_against_fresh_fetch(tmp_path):
         return JobPosting(
             source="adzuna",
             source_id=source_id,
-            title="Director - Enterprise Business Architecture",
+            title="Business Architect",
             company="American Express",
             location=location,
             description="Enterprise Business Architecture leadership role.",
@@ -265,7 +267,7 @@ def test_pipeline_dedupes_revalidated_jobs_against_fresh_fetch(tmp_path):
 
     def day1_sources():
         def adzuna_search(keyword):
-            return [make_amex_posting("amex-1", "Burgess Hill", "2026-07-02")]
+            return [make_amex_posting("amex-1", "Edinburgh", "2026-07-02")]
 
         return [adzuna_search]
 
@@ -273,7 +275,7 @@ def test_pipeline_dedupes_revalidated_jobs_against_fresh_fetch(tmp_path):
         def adzuna_search(keyword):
             # amex-1 has dropped out of today's search results, but a new
             # listing id for the same role at a different location shows up.
-            return [make_amex_posting("amex-2", "London", "2026-07-05")]
+            return [make_amex_posting("amex-2", "Glasgow", "2026-07-05")]
 
         return [adzuna_search]
 
@@ -301,3 +303,98 @@ def test_pipeline_dedupes_revalidated_jobs_against_fresh_fetch(tmp_path):
 
     assert second["verified_count"] == 1  # collapsed, not 2
     assert len({r["posting"].company for r in second["enriched"]}) == 1
+
+
+def test_pipeline_excludes_non_commutable_excluded_title_and_major_stretch_postings(tmp_path):
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+
+    def make(source_id, title, company, location, description=""):
+        return JobPosting(
+            source="adzuna", source_id=source_id, title=title, company=company,
+            location=location, description=description,
+            url=f"https://www.adzuna.co.uk/jobs/details/{source_id}", posted_date="2026-07-01",
+        )
+
+    def sources():
+        def adzuna_search(keyword):
+            return [
+                make("1", "Enterprise Architect", "GoodCo", "Edinburgh, UK"),  # passes everything
+                make("2", "Enterprise Architect", "LondonCo", "London, UK"),  # fails: not commutable
+                make("3", "Security Architect", "SecCo", "Edinburgh, UK"),  # fails: excluded title
+                make("4", "Head of Architecture", "BigCo", "Glasgow, Scotland"),  # fails: gap=3 > cap
+            ]
+
+        return [adzuna_search]
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+    )
+
+    assert result["verified_count"] == 1
+    assert result["enriched"][0]["posting"].company == "GoodCo"
+
+
+def test_pipeline_prunes_previously_stored_jobs_that_fail_new_filters(tmp_path):
+    """Simulates the backlog-cleanup case: a job already sitting in
+    state.json from before these filters existed should get dropped on
+    the next run's re-validation pass, not kept forever."""
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    state_path = tmp_path / "data" / "seen_jobs.json"
+    reports_dir = str(tmp_path / "reports")
+    state_path.parent.mkdir(parents=True)
+
+    import json as json_mod
+
+    preexisting_state = {
+        "schema_version": 1,
+        "runs": [{"date": "2026-07-01", "status": "success", "found": 1}],
+        "jobs": {
+            "adzuna:old-1": {
+                "source": "adzuna",
+                "source_id": "old-1",
+                "title": "Security Architect",
+                "company": "OldCo",
+                "location": "Edinburgh, UK",
+                "description": "",
+                "url": "https://www.adzuna.co.uk/jobs/details/old-1",
+                "posted_date": "2026-06-25",
+                "salary_raw": None,
+                "role_family": "Enterprise Architect",
+                "first_seen": "2026-07-01",
+                "last_verified": "2026-07-01",
+            }
+        },
+    }
+    state_path.write_text(json_mod.dumps(preexisting_state))
+
+    def sources():
+        def adzuna_search(keyword):
+            return []
+
+        return [adzuna_search]
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=str(state_path),
+        reports_dir=reports_dir,
+        sources=sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+        force=True,
+    )
+
+    assert result["verified_count"] == 0
+    with open(state_path, encoding="utf-8") as f:
+        state = json_mod.load(f)
+    assert "adzuna:old-1" not in state["jobs"]

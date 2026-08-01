@@ -13,6 +13,7 @@ def make_record(
     days_left=None,
     seniority_gap=0,
     career_stretch_level="At or below current level",
+    semantic_match=60,
 ):
     posting = JobPosting(
         source="adzuna",
@@ -36,6 +37,7 @@ def make_record(
         decision=decision,
         seniority_gap=seniority_gap,
         career_stretch_level=career_stretch_level,
+        semantic_match=semantic_match,
     )
     return {
         "posting": posting,

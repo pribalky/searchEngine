@@ -7,7 +7,7 @@ from typing import Callable, List, Optional, Set
 
 import requests
 
-from . import config, cv_loader, dedupe as dedupe_mod, report as report_mod, scoring, state as state_mod, tagging, verify
+from . import config, cv_loader, dedupe as dedupe_mod, report as report_mod, scoring, seniority, state as state_mod, tagging, verify
 from .sources.base import JobPosting
 
 DESCRIPTION_STORAGE_LIMIT = 3000
@@ -58,7 +58,7 @@ def run(
             except requests.RequestException as exc:
                 fetch_errors.append(f"{getattr(source_fn, '__name__', source_fn)}({role_family}): {exc}")
 
-    deduped = dedupe_mod.dedupe(raw_postings)
+    deduped = [p for p in dedupe_mod.dedupe(raw_postings) if _passes_filters(p)]
     verified, excluded = verify.verify_postings(
         deduped, max_days_old, verify_timeout, session=http_session, today=today
     )
@@ -108,6 +108,24 @@ def run(
     }
 
 
+def _passes_filters(posting: JobPosting) -> bool:
+    """Cheap, CV-independent pre-scoring filters: commute feasibility,
+    excluded role types, and seniority stretch cap. Applied before the
+    expensive HTTP verification pass (saves wasted link checks) and again
+    when re-validating previously-stored jobs, so the accumulated backlog
+    in state.json gets pruned over subsequent runs as old entries are
+    re-evaluated against these newer criteria."""
+    work_pattern = tagging.tag_work_pattern(posting.description)
+    if not tagging.is_commutable(posting.location, work_pattern):
+        return False
+    if tagging.is_excluded_title(posting.title):
+        return False
+    gap = seniority.compute_gap(posting.title)
+    if gap is not None and gap > config.MAX_ACCEPTABLE_SENIORITY_GAP:
+        return False
+    return True
+
+
 def _revalidate_stored_jobs(persisted_state, fresh_keys, max_days_old, verify_timeout, http_session, today):
     revalidated = []
     for key in list(state_mod.all_job_keys(persisted_state)):
@@ -116,8 +134,9 @@ def _revalidate_stored_jobs(persisted_state, fresh_keys, max_days_old, verify_ti
         record = persisted_state["jobs"][key]
         still_recent = verify.is_within_age_window(record.get("posted_date", ""), max_days_old, today=today)
         still_resolves = still_recent and verify.link_resolves(record.get("url", ""), verify_timeout, session=http_session)
-        if still_resolves:
-            revalidated.append(_deserialize_posting(key, record))
+        posting = _deserialize_posting(key, record) if still_resolves else None
+        if posting is not None and _passes_filters(posting):
+            revalidated.append(posting)
         else:
             state_mod.remove_job(persisted_state, key)
     return revalidated

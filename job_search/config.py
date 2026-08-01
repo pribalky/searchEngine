@@ -119,18 +119,72 @@ PROFILE_KEYWORDS = [
 # titles alone are a weaker, less trustworthy signal of real experience.
 CV_TITLE_MATCH_WEIGHT = 0.25
 
-# Overall Fit blend weights across the three sub-scores. ATS Match and
-# Hiring Manager Match are both responsibility-weighted (see
-# CV_TITLE_MATCH_WEIGHT and score_posting); Recruiter Match is now a pure
-# title-to-title comparison. Recruiter's share is deliberately small so a
+# Overall Fit blend weights. ATS Match and Hiring Manager Match are both
+# responsibility-weighted (see CV_TITLE_MATCH_WEIGHT and score_posting);
+# Recruiter Match is a pure title-to-title comparison, kept small so a
 # title mismatch alone (common when a formal job title undersells actual
-# scope -- see the seniority ladder's rationale) can't dominate the score
-# the way it could when these signals were blended together undifferentiated.
+# scope) can't dominate the score. Semantic Match (see semantic.py) is a
+# TF-IDF/cosine-similarity signal that catches paraphrased overlap the
+# literal fixed-keyword matching above misses entirely (e.g. "established
+# governance controls" vs "define delivery gate criteria" share no exact
+# phrase but do share weighted vocabulary) -- weighted equally alongside
+# ats/hiring_manager since it's the closest thing to real JD matching
+# this rule-based pipeline does.
 OVERALL_FIT_WEIGHTS = {
-    "ats": 0.45,
-    "recruiter": 0.15,
-    "hiring_manager": 0.40,
+    "ats": 0.30,
+    "recruiter": 0.10,
+    "hiring_manager": 0.30,
+    "semantic": 0.30,
 }
+
+# Only postings that are either fully remote, or based in/near one of
+# these locations, are worth surfacing -- a "Hybrid" role still requires
+# an office presence, so it only counts if that office is here too.
+ACCEPTABLE_LOCATIONS = ["Edinburgh", "Glasgow", "Scotland"]
+
+# Postings requiring a bigger seniority jump than this are excluded from
+# the report entirely (still scored/tracked in state, just not shown --
+# same treatment as a "Skip" decision). None/unclear gap is still allowed
+# through, since that just means the title couldn't be confidently
+# classified, not that it's necessarily a big stretch.
+MAX_ACCEPTABLE_SENIORITY_GAP = 2
+
+# Title-keyword exclusion list: security/infrastructure roles (the
+# original ask) plus pure IC software-engineering roles that pass the
+# architecture-anchor gate on incidental keyword overlap but aren't
+# genuinely architecture/governance/leadership positions. Matched with
+# word boundaries (see tagging.is_excluded_title) so e.g. "Software
+# Engineer" doesn't false-positive on "Software Engineering" as a
+# department/discipline name in a legitimate leadership title.
+EXCLUDED_TITLE_KEYWORDS = [
+    "Security Architect",
+    "Security Engineer",
+    "Security Analyst",
+    "Cyber Security",
+    "Infrastructure Engineer",
+    "Infrastructure Architect",
+    "Infrastructure Lead",
+    "Network Engineer",
+    "Network Architect",
+    "DevOps",
+    "Site Reliability",
+    "SRE",
+    "Software Engineer",
+    "Software Developer",
+    "Full Stack Developer",
+    "Full-Stack Developer",
+    "Backend Developer",
+    "Frontend Developer",
+    "Python Developer",
+    "Java Developer",
+    "DBA",
+    "Database Administrator",
+    "Data Modeller",
+    "QA Engineer",
+    "Test Engineer",
+    "Salesforce Developer",
+    "Salesforce Engineer",
+]
 
 # Vacancies older than this are excluded regardless of source.
 MAX_POSTING_AGE_DAYS = 45

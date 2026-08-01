@@ -1,8 +1,13 @@
+import re
 from datetime import date, datetime
 from typing import Optional, Set
 
 from . import config
 from .sponsors import is_registered_sponsor
+
+_EXCLUDED_TITLE_RE = re.compile(
+    "|".join(rf"\b{re.escape(kw.lower())}\b" for kw in config.EXCLUDED_TITLE_KEYWORDS)
+)
 
 
 def tag_sector(company: str) -> str:
@@ -53,6 +58,21 @@ def tag_visa_sponsorship(company: str, description: str, sponsor_names: Optional
     if any(p in text for p in config.VISA_POSITIVE_PHRASES):
         return "Unknown (registry unavailable; JD suggests sponsorship)"
     return "Unknown (registry unavailable)"
+
+
+def is_commutable(location: str, work_pattern: str) -> bool:
+    """Fully remote roles are location-agnostic. Everything else (Hybrid,
+    Onsite, Unknown) still requires an in-person office presence, so it
+    only counts if that office is actually reachable -- checked against
+    config.ACCEPTABLE_LOCATIONS."""
+    if work_pattern == "Remote":
+        return True
+    location_lower = (location or "").lower()
+    return any(loc.lower() in location_lower for loc in config.ACCEPTABLE_LOCATIONS)
+
+
+def is_excluded_title(title: str) -> bool:
+    return bool(_EXCLUDED_TITLE_RE.search((title or "").lower()))
 
 
 def compute_days_left(posted_date: str, max_days_old: int, today: Optional[date] = None) -> Optional[int]:

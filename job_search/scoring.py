@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from . import config, cv_parser, seniority
+from . import config, cv_parser, semantic, seniority
 
 WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z\-]+")
 
@@ -25,6 +25,7 @@ class ScoreResult:
     decision: str
     seniority_gap: Optional[int]
     career_stretch_level: str
+    semantic_match: int
 
 
 def _tokenize(text: str):
@@ -172,8 +173,22 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
     hm_jd_text = f"{requirements_text}\n{responsibilities_section}"
     hm_pct, _, _ = _keyword_overlap_pct(hm_jd_text, best_sections["responsibilities_text"], config.PROFILE_KEYWORDS)
 
+    # TF-IDF/cosine similarity between demonstrated-responsibility text and
+    # the JD description -- catches paraphrased overlap the fixed
+    # PROFILE_KEYWORDS list above can't (see semantic.py). Deliberately
+    # excludes the title text: this component exists to measure
+    # responsibility overlap, and mixing title text back in would
+    # reintroduce exactly the title-driven noise the rest of this
+    # rebalance is trying to reduce.
+    semantic_pct = semantic.tfidf_similarity_pct(best_sections["responsibilities_text"], description)
+
     w = config.OVERALL_FIT_WEIGHTS
-    overall_fit = round(best_ats * w["ats"] + recruiter_pct * w["recruiter"] + hm_pct * w["hiring_manager"])
+    overall_fit = round(
+        best_ats * w["ats"]
+        + recruiter_pct * w["recruiter"]
+        + hm_pct * w["hiring_manager"]
+        + semantic_pct * w["semantic"]
+    )
     keyword_penalty = min(40, len(best_missing) * 5)
     seniority_gap = seniority.compute_gap(title)
     seniority_penalty = seniority.penalty_points(seniority_gap)
@@ -192,4 +207,5 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
         decision=_decision(interview_probability, has_anchor),
         seniority_gap=seniority_gap,
         career_stretch_level=seniority.stretch_label(seniority_gap),
+        semantic_match=semantic_pct,
     )
