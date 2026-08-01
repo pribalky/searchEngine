@@ -1,6 +1,7 @@
 """Orchestrates a single run: fetch -> dedupe -> verify -> re-validate ->
 score -> tag -> persist state -> render report."""
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from datetime import date
 from typing import Callable, List, Optional, Set
@@ -127,18 +128,41 @@ def _passes_filters(posting: JobPosting) -> bool:
 
 
 def _revalidate_stored_jobs(persisted_state, fresh_keys, max_days_old, verify_timeout, http_session, today):
-    revalidated = []
+    """Re-checks previously-stored jobs not present in today's fresh
+    fetch. Age and filter checks are cheap and done inline first, so only
+    postings that could actually still qualify pay for an HTTP link
+    check -- and those checks run on a thread pool, not sequentially.
+    With a backlog in the thousands, a one-request-at-a-time loop here
+    was the direct cause of a run taking 20+ minutes even after the
+    fresh-fetch verification path was already parallelized."""
+    candidates = []  # (key, posting) pairs still worth an HTTP link check
     for key in list(state_mod.all_job_keys(persisted_state)):
         if key in fresh_keys:
             continue
         record = persisted_state["jobs"][key]
         still_recent = verify.is_within_age_window(record.get("posted_date", ""), max_days_old, today=today)
-        still_resolves = still_recent and verify.link_resolves(record.get("url", ""), verify_timeout, session=http_session)
-        posting = _deserialize_posting(key, record) if still_resolves else None
-        if posting is not None and _passes_filters(posting):
-            revalidated.append(posting)
-        else:
+        if not still_recent:
             state_mod.remove_job(persisted_state, key)
+            continue
+        posting = _deserialize_posting(key, record)
+        if not _passes_filters(posting):
+            state_mod.remove_job(persisted_state, key)
+            continue
+        candidates.append((key, posting))
+
+    revalidated = []
+    if candidates:
+        with ThreadPoolExecutor(max_workers=verify.DEFAULT_MAX_WORKERS) as executor:
+            future_to_item = {
+                executor.submit(verify.link_resolves, posting.url, verify_timeout, http_session): (key, posting)
+                for key, posting in candidates
+            }
+            for future in as_completed(future_to_item):
+                key, posting = future_to_item[future]
+                if future.result():
+                    revalidated.append(posting)
+                else:
+                    state_mod.remove_job(persisted_state, key)
     return revalidated
 
 
