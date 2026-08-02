@@ -220,6 +220,7 @@ def build_report(
 
     banking = [r for r in verified_records if r["sector"] == "Banking"]
     consulting = [r for r in verified_records if r["sector"] == "Consulting"]
+    financial_services = [r for r in verified_records if r["sector"] == "Financial Services"]
     visa_friendly = [r for r in verified_records if r["visa"] == "Registered Sponsor"]
     remote_hybrid = [r for r in verified_records if r["work_pattern"] in ("Remote", "Hybrid")]
     stretch = [r for r in verified_records if r["score"].seniority_gap is not None and r["score"].seniority_gap >= 1]
@@ -227,10 +228,11 @@ def build_report(
     parts = [
         "# UK Technology Leadership Job Search Report",
         f"\n**Execution date:** {execution_date}",
-        f"\n**Method:** Adzuna + Reed job-board APIs (UK-scoped), each vacancy verified by "
-        f"posted-date window and a live HTTP check on the application link. Scoring is "
-        f"rule-based keyword overlap against your CV(s), not LLM reasoning -- treat scores "
-        f"as directional, not authoritative.",
+        f"\n**Method:** Adzuna + Reed job-board APIs (UK-scoped) plus direct careers-site "
+        f"searches for Barclays/abrdn/Baillie Gifford, each vacancy verified by posted-date "
+        f"window and a live HTTP check on the application link. Scoring is rule-based keyword "
+        f"overlap against your CV(s), not LLM reasoning -- treat scores as directional, not "
+        f"authoritative.",
         f"\n**Verified vacancies:** {total_verified_count} | **Shown below (Stretch/Apply/Priority "
         f"Apply only, Skip omitted):** {len(verified_records)} | **Excluded (failed verification):** "
         f"{excluded_count} | **CVs loaded:** {cvs_loaded}",
@@ -245,6 +247,7 @@ def build_report(
         _section("Top 10 Newest", by_newest),
         _section("Banking Opportunities", banking),
         _section("Consulting Opportunities", consulting),
+        _section("Financial Services Opportunities", financial_services),
     ]
 
     for category in config.ROLE_CATEGORY_RULES:

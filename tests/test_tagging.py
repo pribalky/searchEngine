@@ -6,7 +6,14 @@ from job_search import tagging
 def test_tag_sector():
     assert tagging.tag_sector("Barclays UK") == "Banking"
     assert tagging.tag_sector("Deloitte LLP") == "Consulting"
+    assert tagging.tag_sector("abrdn") == "Financial Services"
     assert tagging.tag_sector("Some Random Startup") == "Other"
+
+
+def test_is_named_employer_includes_financial_services():
+    assert tagging.is_named_employer("abrdn") is True
+    assert tagging.is_named_employer("Baillie Gifford") is True
+    assert tagging.is_named_employer("Some Random Startup") is False
 
 
 def test_tag_role_categories():

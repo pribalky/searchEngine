@@ -18,11 +18,14 @@ def tag_sector(company: str) -> str:
     for name in config.CONSULTING_EMPLOYERS:
         if name.lower() in company_lower:
             return "Consulting"
+    for name in config.FINANCIAL_SERVICES_EMPLOYERS:
+        if name.lower() in company_lower:
+            return "Financial Services"
     return "Other"
 
 
 def is_named_employer(company: str) -> bool:
-    return tag_sector(company) in ("Banking", "Consulting")
+    return tag_sector(company) in ("Banking", "Consulting", "Financial Services")
 
 
 def tag_role_categories(title: str, description: str):

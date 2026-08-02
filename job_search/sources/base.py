@@ -4,7 +4,7 @@ from typing import Optional
 
 @dataclass
 class JobPosting:
-    source: str  # "adzuna" | "reed"
+    source: str  # "adzuna" | "reed" | "workday"
     source_id: str
     title: str
     company: str

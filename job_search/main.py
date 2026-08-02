@@ -16,6 +16,7 @@ import requests
 from . import config, pipeline, sponsors
 from .sources.adzuna import AdzunaClient
 from .sources.reed import ReedClient
+from .sources.workday import WorkdayClient
 from .sources.base import JobPosting
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,7 +54,23 @@ def build_live_sources():
     def reed_search(keyword):
         return reed.search(keyword)
 
-    return [adzuna_search, reed_search]
+    workday_sources = [_make_workday_search(employer) for employer in config.WORKDAY_EMPLOYERS]
+
+    return [adzuna_search, reed_search] + workday_sources
+
+
+def _make_workday_search(employer_config):
+    client = WorkdayClient(
+        tenant=employer_config["tenant"],
+        host=employer_config["host"],
+        site=employer_config["site"],
+        company_name=employer_config["name"],
+    )
+
+    def search(keyword):
+        return client.search(keyword)
+
+    return search
 
 
 def build_fixture_sources():

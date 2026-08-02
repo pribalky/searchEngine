@@ -74,7 +74,39 @@ CONSULTING_EMPLOYERS = [
     "Coforge",
 ]
 
-NAMED_EMPLOYERS = BANKING_EMPLOYERS + CONSULTING_EMPLOYERS
+# Broader financial services beyond retail/investment banking: asset
+# management, insurance, pensions -- several headquartered in Scotland,
+# which also happen to satisfy the commute filter without an exception.
+FINANCIAL_SERVICES_EMPLOYERS = [
+    "abrdn",
+    "Baillie Gifford",
+    "Standard Life",
+    "Phoenix Group",
+    "Scottish Widows",
+    "Aegon",
+    "Royal London",
+    "Aviva",
+    "Legal & General",
+    "M&G",
+    "Prudential",
+    "Schroders",
+    "Fidelity International",
+    "Virgin Money",
+]
+
+NAMED_EMPLOYERS = BANKING_EMPLOYERS + CONSULTING_EMPLOYERS + FINANCIAL_SERVICES_EMPLOYERS
+
+# Employers with a direct careers-site adapter (see sources/workday.py),
+# queried in addition to the Adzuna/Reed broad-market search. Confirmed
+# via their public career site URLs to run on Workday; a generic client
+# handles all three since Workday exposes the same JSON search API
+# regardless of tenant. Phase 1 -- other named employers may also run on
+# Workday but haven't been individually confirmed yet.
+WORKDAY_EMPLOYERS = [
+    {"name": "Barclays", "tenant": "barclays", "host": "wd3", "site": "External_Career_Site_Barclays"},
+    {"name": "abrdn", "tenant": "abrdn", "host": "wd3", "site": "abrdn"},
+    {"name": "Baillie Gifford", "tenant": "bailliegifford", "host": "wd3", "site": "BaillieGiffordCareers"},
+]
 
 # Candidate background keywords, used both as the "hard skill" taxonomy for
 # ATS-style scoring and to build the base profile-match vocabulary.
