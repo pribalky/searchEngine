@@ -72,6 +72,9 @@ CONSULTING_EMPLOYERS = [
     "Infosys",
     "Synechron",
     "Coforge",
+    "Atos",
+    "AECOM",
+    "CreateFuture",
 ]
 
 # Broader financial services beyond retail/investment banking: asset
