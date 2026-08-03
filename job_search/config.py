@@ -154,6 +154,17 @@ PROFILE_KEYWORDS = [
 # titles alone are a weaker, less trustworthy signal of real experience.
 CV_TITLE_MATCH_WEIGHT = 0.25
 
+# A keyword-overlap percentage computed from very few matched keywords
+# isn't statistically reliable -- a JD that only happens to mention one
+# PROFILE_KEYWORDS phrase (e.g. "Financial Services", because the employer
+# IS a financial services company, not because the role has anything to do
+# with architecture) would otherwise round up to a 100% match purely
+# because that one word also recurs somewhere in the CV. Flooring the
+# denominator at this value means a single or double incidental hit can't
+# reach full marks on its own -- ATS/Hiring Manager Match only hits 100%
+# once genuine overlap spans several distinct keywords.
+MIN_KEYWORD_HITS_FOR_FULL_CONFIDENCE = 2
+
 # Overall Fit blend weights. ATS Match and Hiring Manager Match are both
 # responsibility-weighted (see CV_TITLE_MATCH_WEIGHT and score_posting);
 # Recruiter Match is a pure title-to-title comparison, kept small so a

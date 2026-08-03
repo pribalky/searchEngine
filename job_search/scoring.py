@@ -37,13 +37,14 @@ def _phrase_hits(text: str, phrases: List[str]) -> List[str]:
     return [p for p in phrases if p.lower() in text_lower]
 
 
-def _keyword_overlap_pct(jd_text: str, cv_text: str, keywords: List[str]):
+def _keyword_overlap_pct(jd_text: str, cv_text: str, keywords: List[str], min_hits_for_full_confidence: int = 1):
     jd_hits = set(_phrase_hits(jd_text, keywords))
     if not jd_hits:
         return 0, jd_hits, set()
     cv_hits = set(_phrase_hits(cv_text, keywords))
     matched = jd_hits & cv_hits
-    pct = round(100 * len(matched) / len(jd_hits))
+    denominator = max(len(jd_hits), min_hits_for_full_confidence)
+    pct = round(100 * len(matched) / denominator)
     return pct, jd_hits, matched
 
 
@@ -95,7 +96,8 @@ def _weighted_keyword_match(jd_text: str, titles_text: str, responsibilities_tex
         elif kw in title_hits:
             weighted_sum += config.CV_TITLE_MATCH_WEIGHT
 
-    pct = round(100 * weighted_sum / len(jd_hits))
+    denominator = max(len(jd_hits), config.MIN_KEYWORD_HITS_FOR_FULL_CONFIDENCE)
+    pct = round(100 * weighted_sum / denominator)
     missing = sorted(jd_hits - resp_hits)
     return pct, jd_hits, missing
 
@@ -171,7 +173,12 @@ def score_posting(title: str, description: str, cvs: Dict[str, str]) -> ScoreRes
     requirements_text = _extract_requirements_section(description)
     responsibilities_section = _extract_responsibilities_section(description)
     hm_jd_text = f"{requirements_text}\n{responsibilities_section}"
-    hm_pct, _, _ = _keyword_overlap_pct(hm_jd_text, best_sections["responsibilities_text"], config.PROFILE_KEYWORDS)
+    hm_pct, _, _ = _keyword_overlap_pct(
+        hm_jd_text,
+        best_sections["responsibilities_text"],
+        config.PROFILE_KEYWORDS,
+        min_hits_for_full_confidence=config.MIN_KEYWORD_HITS_FOR_FULL_CONFIDENCE,
+    )
 
     # TF-IDF/cosine similarity between demonstrated-responsibility text and
     # the JD description -- catches paraphrased overlap the fixed

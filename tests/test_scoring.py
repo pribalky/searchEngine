@@ -126,6 +126,25 @@ def test_ats_match_weights_responsibility_evidence_over_title_mention():
     assert title_only_result.ats_match == 17  # 2 of 3 keywords at 0.25 partial credit
 
 
+def test_single_incidental_keyword_cannot_reach_full_ats_match():
+    """Reproduces a real false positive: a JD for a completely unrelated
+    role (an IT support job) that happens to mention the employer's own
+    sector once ("financial services") should not score a perfect ATS
+    Match just because that one generic word also recurs in the CV --
+    that's a single incidental hit, not real evidence of fit."""
+    unrelated_title = "Application Support Engineer"
+    unrelated_description = "Join our financial services company, providing 2nd/3rd line application support."
+    broad_cv = (
+        "Architecture professional delivering enterprise technology solutions across banking, "
+        "financial services, fintech, logistics, and software product environments."
+    )
+
+    result = score_posting(unrelated_title, unrelated_description, {"cv": broad_cv})
+
+    assert result.ats_match < 100
+    assert result.decision in {"Stretch", "Skip"}
+
+
 def test_recruiter_match_only_considers_cv_title_lines():
     cv_with_matching_title_but_no_responsibility_overlap = (
         "PROFESSIONAL EXPERIENCE\n"
