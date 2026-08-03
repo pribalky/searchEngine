@@ -1,19 +1,5 @@
 {
   "jobs": {
-    "adzuna:5773191437": {
-      "company": "JAM Recruitment Ltd",
-      "description": "Azure Technical Architect 12 months \u00a3507.51 per day (Inside IR35) Remote - occasional travel to Preston (NW) 'Applicants must have the right to work in the UK, and be eligible for SC/DV clearance.' The Azure Architect is responsible for designing secure, scalable, and resilient cloud architectures on Microsoft Azure that align with organisational strategy, governance, and security requirements. This role provides architectural leadership across cloud infrastructure, networking, identity, securi\u2026",
-      "first_seen": "2026-07-22",
-      "last_verified": "2026-08-03",
-      "location": "UK",
-      "posted_date": "2026-06-23",
-      "role_family": "Architecture Review Lead",
-      "salary_raw": null,
-      "source": "adzuna",
-      "source_id": "5773191437",
-      "title": "Azure Technical Architect",
-      "url": "https://www.adzuna.co.uk/jobs/details/5773191437?utm_medium=api&utm_source=00c9deb5"
-    },
     "adzuna:5783906127": {
       "company": "CreateFuture",
       "description": "Who we are CreateFuture is fast becoming the UK\u2019s most recognisable digital consultancy, with years of experience building digital products and services for major organisations whilst putting our people first. We have offices in the centre of Edinburgh, Leeds, Manchester, and London as well as remote employees located throughout the country. We are a team of creators - whether that\u2019s code, project plans, go to market strategies, culture initiatives, marketing campaigns, large language models or\u2026",
@@ -69,20 +55,6 @@
       "source_id": "5790073494",
       "title": "Technical Lead - Integration & Architecture",
       "url": "https://www.adzuna.co.uk/jobs/details/5790073494?utm_medium=api&utm_source=00c9deb5"
-    },
-    "adzuna:5790313476": {
-      "company": "Rebel Recruitment",
-      "description": "Role: Solutions Architect Location: Remote Working Arrangement: Occasional travel to national and international client sites Salary: Up to \u00a3130k SC clearance is essential. You've built solutions that solve complex technical problems. Now you're looking for the opportunity to influence something much bigger. You've probably spent years working across defence, government, or other highly secure environments, helping customers solve difficult challenges through technology. You're comfortable leadi\u2026",
-      "first_seen": "2026-07-09",
-      "last_verified": "2026-08-03",
-      "location": "Nottingham, Nottinghamshire",
-      "posted_date": "2026-07-06",
-      "role_family": "Principal Architect",
-      "salary_raw": "100000-100000",
-      "source": "adzuna",
-      "source_id": "5790313476",
-      "title": "Solutions Architect",
-      "url": "https://www.adzuna.co.uk/jobs/details/5790313476?utm_medium=api&utm_source=00c9deb5"
     },
     "adzuna:5793497315": {
       "company": "World Wide Technology",
@@ -886,7 +858,7 @@
       "company": "Data Careers",
       "description": "Job Description Senior Information Security Specialist Highly Remote | Security Architecture | Cyber Security | \u00a365,365 We\u2019re looking for an experienced Information Security, Information Assurance, Cyber Security or Security Architecture professional to join a collaborative team delivering secure technology across major digital transformation programmes. Working alongside architects, engineers and project teams, you\u2019ll provide trusted technical assurance across cloud, infrastructure and enterpr\u2026",
       "first_seen": "2026-07-24",
-      "last_verified": "2026-07-24",
+      "last_verified": "2026-08-03",
       "location": "UK",
       "posted_date": "2026-07-21",
       "role_family": "Architecture Assurance",
@@ -1180,7 +1152,7 @@
       "company": "Talent Locker",
       "description": "AI Architect Up to \u00a3120k  Bonus  Benefits Remote (UK) | Occasional Client Travel Architect the Future of Enterprise AI AI is moving beyond experimentation and this consultancy is helping some of the UK's largest organisations turn AI ambition into real-world capability. We're looking for an experienced AI Architect to join a growing AI practice, designing and delivering secure, scalable and production-ready AI solutions across enterprise environments. This is a role for someone who understands \u2026",
       "first_seen": "2026-07-30",
-      "last_verified": "2026-07-30",
+      "last_verified": "2026-08-03",
       "location": "UK",
       "posted_date": "2026-07-23",
       "role_family": "Principal Architect",
@@ -1442,20 +1414,6 @@
       "title": "Data Engineering Manager- Outside IR35",
       "url": "https://www.adzuna.co.uk/jobs/details/5820418670?utm_medium=api&utm_source=00c9deb5"
     },
-    "adzuna:5820419652": {
-      "company": "TALENT INTERNATIONAL UK LTD",
-      "description": "Job Description: ServiceNow Consultant Contract Length: 3 Months Initial (with potential for extension) Location: Remote IR35 Status: Inside IR35 Day Rate: \u00a3650 per day The Opportunity We are seeking a ServiceNow Solution Architect for an initial 3-month contract to drive a critical optimization, delivery, and enablement program for a prominent UK public sector end-client on behalf of our consultancy. This is a dual-aspect role requiring a rare blend of high-level architectural governance, stra\u2026",
-      "first_seen": "2026-07-30",
-      "last_verified": "2026-08-03",
-      "location": "UK",
-      "posted_date": "2026-07-30",
-      "role_family": "Solution Architect",
-      "salary_raw": "143000-156000",
-      "source": "adzuna",
-      "source_id": "5820419652",
-      "title": "ServiceNow Consultant",
-      "url": "https://www.adzuna.co.uk/jobs/details/5820419652?utm_medium=api&utm_source=00c9deb5"
-    },
     "adzuna:5820548978": {
       "company": "Brightbox",
       "description": "Business Analyst - Marketing Largely remote with 1 days onsite per month (Coventry) Rate - \u00a3400 - \u00a3450 (Inside IR35) Role Overview: We are seeking a Business Analyst with Marketing expertise for a 3-month contract with a potential immediate start, subject to BPSS checks. This role involves working closely with technical specialists and engagement managers to ensure successful delivery of marketing campaigns, primarily focusing on automating processes and optimising data architecture. Responsibi\u2026",
@@ -1595,20 +1553,6 @@
       "source_id": "5822328535",
       "title": "Senior/Principal Electrical Engineer Building Services",
       "url": "https://www.adzuna.co.uk/jobs/details/5822328535?utm_medium=api&utm_source=00c9deb5"
-    },
-    "adzuna:5822399668": {
-      "company": "Meraki Talent",
-      "description": "Technical programme manager (Windows Active Directory) Infrastructure Programme Manager Technical Programme Manager required for 6-month contract based in London for a leading ' financial services firm. This role is fully remote but with some periodical travel for meetings in London Ideally applicants with a background in delivering projects across Windows Active directory projects paired with broad exposure to both Technical Infrastructure and Microsoft based project delivery (Exposure deliver\u2026",
-      "first_seen": "2026-08-01",
-      "last_verified": "2026-08-03",
-      "location": "London, UK",
-      "posted_date": "2026-07-31",
-      "role_family": "Technical Programme Manager",
-      "salary_raw": "50342-50342",
-      "source": "adzuna",
-      "source_id": "5822399668",
-      "title": "Technical Transformation Programme Manager",
-      "url": "https://www.adzuna.co.uk/jobs/details/5822399668?utm_medium=api&utm_source=00c9deb5"
     },
     "adzuna:5822524858": {
       "company": "Smart Sourcer Limited",
@@ -1848,6 +1792,20 @@
       "title": "AWS Data Architect - Home-Based",
       "url": "https://www.adzuna.co.uk/jobs/details/5824430444?utm_medium=api&utm_source=00c9deb5"
     },
+    "adzuna:5824541593": {
+      "company": "DXC Technology",
+      "description": "hackajob is collaborating with DXC Technology to connect them with exceptional professionals for this role. Job Description: Application Transformation Advisor Business area: UKI Advisory X \u2013 Application Transformation Location: UK-based / remote with travel as required. IDEALLY LONDON OFFICE BASED. Security: Ability to support secure or regulated client environments, subject to project-specific eligibility requirements. Requires a sole UK national who hold or will undergo security clearance. R\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "London, UK",
+      "posted_date": "2026-07-30",
+      "role_family": "Enterprise Architect",
+      "salary_raw": "65367-65367",
+      "source": "adzuna",
+      "source_id": "5824541593",
+      "title": "Applications Transformation Advisor",
+      "url": "https://www.adzuna.co.uk/jobs/details/5824541593?utm_medium=api&utm_source=00c9deb5"
+    },
     "adzuna:5825825322": {
       "company": "Wood Group",
       "description": "Description Remarkable people, trusted by clients to design and advance the world. Wood is recruiting for a Finance Systems Enterprise Architect with a focus on managing all aspects of accounting for the UK region. The role holder is accountable for developing and implementing finance technology architecture to improve reporting speed, accuracy, and insights while reducing costs and supporting business goals. This is a role that can be predominantly remote with attendance at the following UK of\u2026",
@@ -1875,6 +1833,90 @@
       "source_id": "5825872443",
       "title": "Senior Portfolio Risk Analyst",
       "url": "https://www.adzuna.co.uk/jobs/details/5825872443?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826430147": {
+      "company": "Barclays",
+      "description": "hackajob is collaborating with Barclays to connect them with exceptional professionals for this role. We are seeking a Data Governance Senior Manager to lead the development, implementation, and continuous enhancement of governance frameworks that ensure the integrity, security, and compliance of data and records across the bank's global operations. To be successful as a Data Governance Senior Manager, you should have experience with: Deep understanding of data governance values, including data\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow, Scotland",
+      "posted_date": "2026-08-02",
+      "role_family": "Platform Governance",
+      "salary_raw": "67810-67810",
+      "source": "adzuna",
+      "source_id": "5826430147",
+      "title": "Data Governance Senior Manager",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826430147?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826608960": {
+      "company": "Gigged.AI",
+      "description": "Gigged AI is an On demand talent marketplace specialising in the IT and technology sector. We have an opportunity live at the moment for a Finance Business Analyst (Accounts Receivable / E-Invoicing). This is a Remote/Hybrid role - requiring 1,2 days per month in Glasgow. Contract: 6 Months Initial Location: Remote/Hybrid - 1,2 days per month in Glasgow Rate: \u00a3550 per day (Inside IR35) The Opportunity: We're delivering a large-scale e-invoicing transformation programme across multiple countries\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow, Scotland",
+      "posted_date": "2026-08-03",
+      "role_family": "Solution Architect",
+      "salary_raw": "136500-149500",
+      "source": "adzuna",
+      "source_id": "5826608960",
+      "title": "Finance Business Analyst (Accounts Receivable/E-Invoicing) - Inside IR35",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826608960?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826636788": {
+      "company": "Tenth Revolution Group",
+      "description": "Lead Data Engineer - Fully Remote (UK) - AWS - AI & Machine Learning - Up to \u00a3110,000 Are you a Senior Data Engineer looking for the opportunity to own a data function rather than simply contribute to one? We're working with a high-growth technology business that is scaling rapidly and investing heavily in its data, analytics and AI capabilities. The organisation develops cutting-edge products that combine data, machine learning and AI to help global enterprise clients make better decisions thr\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "London, UK",
+      "posted_date": "2026-08-03",
+      "role_family": "Architecture Governance",
+      "salary_raw": "80000-110000",
+      "source": "adzuna",
+      "source_id": "5826636788",
+      "title": "Lead Data Engineer",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826636788?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826637332": {
+      "company": "Constant Recruitment Ltd",
+      "description": "Identity Architect Remote \u2013 Must be UK based \u00a370,000 \u2013 \u00a380,000 Are you an experienced Identity Architect with deep, hands-on Microsoft Entra ID expertise? Have you led a complex Microsoft 365 tenant consolidation rather than simply supporting one part of the project? Do you also have practical experience with Okta Identity Engine and modern passwordless authentication? We are recruiting for a growing Microsoft-focused technology consultancy delivering complex workplace, identity and security pr\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "London, UK",
+      "posted_date": "2026-08-03",
+      "role_family": "Lead Architect",
+      "salary_raw": "70000-80000",
+      "source": "adzuna",
+      "source_id": "5826637332",
+      "title": "Identity Architect",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826637332?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826644176": {
+      "company": "Hays Specialist Recruitment Limited",
+      "description": "Your new company You will be working for a known organisation who are looking for an Informatica Engineer who is actively SC Cleared. This role won't be able to accept anyone who doesn't hold active SC clearance. This is a 6-month rolling contract and paying \u00a3600 per day inside IR35. The role is fully remote working. Your new role Key Responsibilities Design, develop and maintain ETL processes using Informatica PowerCenter, IICS, or related Informatica technologies. Build and optimise data inte\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "London, UK",
+      "posted_date": "2026-08-03",
+      "role_family": "Business Architect",
+      "salary_raw": "156000-156000",
+      "source": "adzuna",
+      "source_id": "5826644176",
+      "title": "Informatica Engineer",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826644176?utm_medium=api&utm_source=00c9deb5"
+    },
+    "adzuna:5826699226": {
+      "company": "Methods Business and Digital Technology",
+      "description": "We are seeking a Senior Data Engineer with strong SQL and Java expertise to design and deliver scalable data solutions. In this role, you will leverage Java's robustness and Scala's functional data-processing power to build scalable pipelines, manage distributed big data frameworks, and optimize our data platform. Location: 3days/w onsite in Glasgow Key Responsibilities Design, develop, and maintain scalable data pipelines to support data integration, transformation, and analytics requirements.\u2026",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow, Scotland",
+      "posted_date": "2026-08-03",
+      "role_family": "Business Architect",
+      "salary_raw": "60000-80000",
+      "source": "adzuna",
+      "source_id": "5826699226",
+      "title": "Senior Data engineer (Java/SQL)",
+      "url": "https://www.adzuna.co.uk/jobs/details/5826699226?utm_medium=api&utm_source=00c9deb5"
     },
     "reed:57044799": {
       "company": "PARALLEL RECRUITMENT LTD",
@@ -2247,7 +2289,7 @@
       "last_verified": "2026-08-03",
       "location": "Glasgow Campus",
       "posted_date": "2026-07-31",
-      "role_family": "Enterprise Architect",
+      "role_family": "Architecture Governance",
       "salary_raw": null,
       "source": "workday",
       "source_id": "barclays:JR-0000099523",
@@ -2261,12 +2303,26 @@
       "last_verified": "2026-08-03",
       "location": "Glasgow Campus",
       "posted_date": "2026-08-03",
-      "role_family": "Technology Governance Lead",
+      "role_family": "Platform Governance",
       "salary_raw": null,
       "source": "workday",
       "source_id": "barclays:JR-0000099658",
       "title": "Product Owner",
       "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/Product-Owner_JR-0000099658-1"
+    },
+    "workday:barclays:JR-0000100503": {
+      "company": "Barclays",
+      "description": "Job Description Purpose of the role To provide exceptional customer service while resolving more complex customer needs/requests. Accountabilities Provision of customer service through various communication channels including chat, email and phone. Execution of customer service requirements to resolve more complex, specific customer needs, and give a unique, personalised resolution for each case. Collaboration with teams across the bank to align and integrate customer care processes. Identification of areas for improvement to provide recommendations for change in customer care processes and provide feedback and coaching for colleagues on these highlighted areas. Development and implementation of customer care procedures and controls to mitigate risks and maintain efficient operations. Resolution of specific customer inquiries and issues related to the bank\u2019s products and service, including account balances, transactions and payments. Development and execution of reports and presentations on customer care performance and communicate findings to internal senior stakeholders. Identification of industry trends and developments to implement best practice to improve customer care efficiency and effectiveness. Analyst Expectations To meet the needs of stakeholders/ customers through specialist advice and support Perform prescribed activities in a timely manner and to a high standard which will impact both the role itself and surrounding roles. Likely to have responsibility for specific processes within a team They may lead and supervise a team, guiding and supporting professional development, allocating work requirements and coordinating team resources. They supervise a team, allocate work requirements and coordinate team resources. If the position has leadership responsibilities, People Leaders are expected to demonstrate a clear set of leadership behaviours to create an environment for colleagues to thrive and deliver to a consistently excellent standard. The four LEAD behaviours are: L \u2013 Listen and be authentic, E \u2013 Energise and inspire, A \u2013 Align across the enterprise, D \u2013 Develop others. OR for an individual contributor, they manage own workload, take responsibility for the implementation of systems and processes within own work area and participate on projects broader than direct team. Execute work requirements as identified in processes and procedures, collaborating with and impacting on the work of closely related teams. Check work of colleagues within team to meet internal and stakeholder requirements. Provide specialist advice and support pertaining to own work area. Take ownership for managing risk and strengthening controls in relation to the work you own or contribute to. Deliver your work and areas of responsibility in line with relevant rules, regulation and codes of conduct. Maintain and continually build an understanding of how all teams in area contribute to the objectives of the broader sub-function, delivering impact on the work of c",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow Campus",
+      "posted_date": "2026-08-03",
+      "role_family": "Technology Transformation Lead",
+      "salary_raw": null,
+      "source": "workday",
+      "source_id": "barclays:JR-0000100503",
+      "title": "Specialist Customer Care \u2013 Intermediary Mortgage Expert",
+      "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/Specialist-Customer-Care---Intermediary-Mortgage-Expert_JR-0000100503"
     },
     "workday:barclays:JR-0000103986": {
       "company": "Barclays",
@@ -2310,6 +2366,20 @@
       "title": "API Engineer",
       "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/API-Engineer_JR-0000113065"
     },
+    "workday:barclays:JR-0000114354": {
+      "company": "Barclays",
+      "description": "Job Description Purpose of the role To identify, assess and mitigate prudential regulatory reporting risks, provide oversight on regulatory reporting, and maintenance of open communication with regulators to ensure that the bank's activities and operations comply with all applicable laws, regulations, and internal control policies. Accountabilities Identification and assessment of prudential regulatory reporting risks arising from the bank's activities, products, and services. Development and implementation of strategies to mitigate prudential regulatory reporting risks, ensuring compliance with all applicable laws, regulations, and internal control policies, and conduct regular compliance reviews and audits to identify and address potential compliance gaps or violations. Assessment of the effectiveness of the bank\u2019s internal control processes and governance framework, including addressing any weaknesses or gaps that could lead to regulatory reporting non-compliance, and implementation of measures to strengthen internal controls. Preparation and submission of regulatory reports to authorities, and provision of support to other departments in their preparation and review of regulatory reports. Analysis and presentation of regulatory data to provide insights into business performance, identify trends, and support decision-making. Development and implementation of training programmes to educate employees on regulatory requirements and compliance responsibilities. Communication and liaising with regulatory bodies, prompt responses to inquiries and provision of requested information, and representation of the bank in meetings with regulators. Management of the selection, implementation, and maintenance of regulatory reporting systems and software applications, including collaboration with IT colleagues to integrate regulatory reporting systems with other enterprise systems. Analyst Expectations To perform prescribed activities in a timely manner and to a high standard consistently driving continuous improvement. Requires in-depth technical knowledge and experience in their assigned area of expertise Thorough understanding of the underlying principles and concepts within the area of expertise They lead and supervise a team, guiding and supporting professional development, allocating work requirements and coordinating team resources. If the position has leadership responsibilities, People Leaders are expected to demonstrate a clear set of leadership behaviours to create an environment for colleagues to thrive and deliver to a consistently excellent standard. The four LEAD behaviours are: L \u2013 Listen and be authentic, E \u2013 Energise and inspire, A \u2013 Align across the enterprise, D \u2013 Develop others. OR for an individual contributor, they develop technical expertise in work area, acting as an advisor where appropriate. Will have an impact on the work of related teams within the area. Partner with other functions and business areas. Takes responsibility for end",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow Campus",
+      "posted_date": "2026-08-03",
+      "role_family": "Technology Governance Lead",
+      "salary_raw": null,
+      "source": "workday",
+      "source_id": "barclays:JR-0000114354",
+      "title": "US Liquidity Reporting Analyst",
+      "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/US-Liquidity-Reporting-Analyst_JR-0000114354-1"
+    },
     "workday:barclays:JR-0000115731": {
       "company": "Barclays",
       "description": "Job Description Purpose of the role To support the organisation, achieve its strategic objectives by the identification of business requirements and solutions that address business problems and opportunities. Accountabilities Identification and analysis of business problems and client requirements that require change within the organisation. Development of business requirements that will address business problems and opportunities. Collaboration with stakeholders to ensure that proposed solutions meet their needs and expectations. Support the creation of business cases that justify investment in proposed solutions. Conduct feasibility studies to determine the viability of proposed solutions. Support the creation of reports on project progress to ensure proposed solutions are delivered on time and within budget. Creation of operational design and process design to ensure that proposed solutions are delivered within the agreed scope. Support to change management activities, including development of a traceability matrix to ensure proposed solutions are successfully implemented and embedded in the organisation. Vice President Expectations To contribute or set strategy, drive requirements and make recommendations for change. Plan resources, budgets, and policies; manage and maintain policies/ processes; deliver continuous improvements and escalate breaches of policies/procedures.. If managing a team, they define jobs and responsibilities, planning for the department\u2019s future needs and operations, counselling employees on performance and contributing to employee pay decisions/changes. They may also lead a number of specialists to influence the operations of a department, in alignment with strategic as well as tactical priorities, while balancing short and long term goals and ensuring that budgets and schedules meet corporate requirements.. If the position has leadership responsibilities, People Leaders are expected to demonstrate a clear set of leadership behaviours to create an environment for colleagues to thrive and deliver to a consistently excellent standard. The four LEAD behaviours are: L \u2013 Listen and be authentic, E \u2013 Energise and inspire, A \u2013 Align across the enterprise, D \u2013 Develop others.. OR for an individual contributor, they will be a subject matter expert within own discipline and will guide technical direction. They will lead collaborative, multi-year assignments and guide team members through structured assignments, identify the need for the inclusion of other areas of specialisation to complete assignments. They will train, guide and coach less experienced specialists and provide information affecting long term profits, organisational risks and strategic decisions.. Advise key stakeholders, including functional leadership teams and senior management on functional and cross functional areas of impact and alignment. Manage and mitigate risks through assessment, in support of the control and governance agenda. Demonstrate leadership and",
@@ -2331,7 +2401,7 @@
       "last_verified": "2026-08-03",
       "location": "Edinburgh, South Gyle Crescent \u2013 TESCO TSA",
       "posted_date": "2026-07-31",
-      "role_family": "Technology Governance Manager",
+      "role_family": "Technical Programme Manager",
       "salary_raw": null,
       "source": "workday",
       "source_id": "barclays:JR-0000116810",
@@ -2351,6 +2421,34 @@
       "source_id": "barclays:JR-0000119358",
       "title": "Learning Product Manager",
       "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/Learning-Product-Manager_JR-0000119358-1"
+    },
+    "workday:barclays:JR-0000119908": {
+      "company": "Barclays",
+      "description": "Job Description Purpose of the role Guides teams, leaders, and organizations in adopting and optimizing Agile practices. To foster an Agile mindset, enhance team performance, and drive continuous improvement by coaching teams in Agile methodologies, facilitating collaboration, and removing barriers to efficiency. Align Agile practices with organisational goals and support long-term, sustainable Agile transformations. Accountabilities Mentor and coach : Guide teams and leaders on Agile principles, practices, tools, and methodologies in alignment to the Business Unit\u2019s strategic needs and delivering value to the client / customers Facilitate Colleague Development: Coach and Develop colleagues to embed Agile ways of working, championing an Agile mindset and behaviors to drive cultural change Build High-Performing Teams: Help teams identify and address impediments to Agile execution and foster a culture of collaboration, innovation, and continuous learning Continuous Improvement: Use data and metrics to identify opportunities for improvement and growth Cross Business Collaboration: Collaborate with other Agile Coaches, share best practice and contribute to a network of Agile champions across Business Units Agile Adoption: Own the Agile coaching strategy to continually improve maturity levels across the organisation by embedding best practices. Join us as an Agile Coach at Barclays, where you will foster an Agile mindset, enhance team performance, and drive continuous improvement by coaching teams in Agile methodologies, facilitating collaboration, and removing barriers to efficiency. Align Agile practices with organisational goals and support long-term, sustainable Agile transformations. To be successful as Agile Coach, you should have: Led and supported the Product Community of Practice, fostering collaboration, knowledge sharing, and continuous improvement across product teams. Supported GitLab implementation and adoption, driving improvements in workflow management, team collaboration, and delivery processes. Coaching and mentoring individuals, teams and leaders on agile principles. Change leadership and organisational transformation. Some other highly valued skills may include: Facilitation and workshop design/execution. Agile/Lean framework knowledge (SAFe, Scrum, Lean). Strong tooling and metrics knowledge (e.g., Jira, Confluence, Flow Metrics, GitLab. You may be assessed on the key critical skills relevant for success in role, such as risk and controls, change and transformation, business acumen, strategic thinking, and digital and technology, as well as job-specific technical skills. This role will be based in Edinburgh. #Tescobanktechnology",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Edinburgh, South Gyle Crescent \u2013 TESCO TSA",
+      "posted_date": "2026-08-03",
+      "role_family": "Technology Strategy Lead",
+      "salary_raw": null,
+      "source": "workday",
+      "source_id": "barclays:JR-0000119908",
+      "title": "Agile Coach",
+      "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Edinburgh-South-Gyle-Crescent--TESCO-TSA/Agile-Coach_JR-0000119908"
+    },
+    "workday:barclays:JR-0000123163": {
+      "company": "Barclays",
+      "description": "Job Description Purpose of the role To provide resolutions for customer queries/issues and personalise each interaction through the use of multiple communication channels. Accountabilities Collaboration across multiple digital channels to personalise each interaction with a customer. Enhancing the bank's digital capabilities when current technology is identified as not yet ready to support. Provision of exceptional customer service to clients by responding to inquiries, resolving issues and handling client requests efficiently. Support the collaboration of internal stakeholders including sales, operational, and risk management teams to meet client needs and expectations, so that transactions are executed accurately and on time. Support teams within the business operations function as needed, including risk management, compliance and collections. Comply with all regulatory requirements and internal policies related to customer care. To provide resolutions for customer queries/issues and personalise each interaction through the use of multiple communication channels. Analyst Expectations To meet the needs of stakeholders/ customers through specialist advice and support Perform prescribed activities in a timely manner and to a high standard which will impact both the role itself and surrounding roles. Likely to have responsibility for specific processes within a team They may lead and supervise a team, guiding and supporting professional development, allocating work requirements and coordinating team resources. They supervise a team, allocate work requirements and coordinate team resources. If the position has leadership responsibilities, People Leaders are expected to demonstrate a clear set of leadership behaviours to create an environment for colleagues to thrive and deliver to a consistently excellent standard. The four LEAD behaviours are: L \u2013 Listen and be authentic, E \u2013 Energise and inspire, A \u2013 Align across the enterprise, D \u2013 Develop others. OR for an individual contributor, they manage own workload, take responsibility for the implementation of systems and processes within own work area and participate on projects broader than direct team. Execute work requirements as identified in processes and procedures, collaborating with and impacting on the work of closely related teams. Check work of colleagues within team to meet internal and stakeholder requirements. Provide specialist advice and support pertaining to own work area. Take ownership for managing risk and strengthening controls in relation to the work you own or contribute to. Deliver your work and areas of responsibility in line with relevant rules, regulation and codes of conduct. Maintain and continually build an understanding of how all teams in area contribute to the objectives of the broader sub-function, delivering impact on the work of collaborating teams. Continually develop awareness of the underlying principles and concepts on which the work within the area of responsibili",
+      "first_seen": "2026-08-03",
+      "last_verified": "2026-08-03",
+      "location": "Glasgow Campus",
+      "posted_date": "2026-08-03",
+      "role_family": "Technology Transformation Lead",
+      "salary_raw": null,
+      "source": "workday",
+      "source_id": "barclays:JR-0000123163",
+      "title": "Client Service Executive",
+      "url": "https://barclays.wd3.myworkdayjobs.com/External_Career_Site_Barclays/job/Glasgow-Campus/Client-Service-Executive_JR-0000123163-1"
     }
   },
   "runs": [
@@ -2432,6 +2530,11 @@
     {
       "date": "2026-08-03",
       "found": 163,
+      "status": "success"
+    },
+    {
+      "date": "2026-08-03",
+      "found": 170,
       "status": "success"
     }
   ],
