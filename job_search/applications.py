@@ -98,30 +98,39 @@ def _default_user_fields(today: str) -> dict:
     return fields
 
 
-def sync(
-    path: str,
+def upsert(
+    data: dict,
     enriched: List[dict],
     llm_results: Dict[str, dict],
     today: Optional[str] = None,
     llm_spend: Optional[dict] = None,
+    force_include: bool = False,
 ) -> dict:
-    """Upserts scored postings into the tracker. Pipeline-derived fields
-    are always refreshed from this run's scoring/LLM output; stage,
-    per-stage dates, and notes are preserved for existing records and only
-    defaulted on brand-new ones. Only non-"Skip" postings are tracked, same
-    bar as the report. Records already in the tracker but absent from this
-    run's `enriched` (e.g. a listing aged out) are left untouched -- the
-    tracker is an append/update log, not pruned in lockstep with
-    seen_jobs.json, so application history survives a listing's expiry.
+    """Core merge logic, operating on an already-loaded tracker `data`
+    dict (see load()) rather than a file path -- for callers that manage
+    their own persistence (e.g. the Streamlit tracker's GitHub-write-back
+    path, which must not go through a local-file save()). `sync()` below
+    is the file-path convenience wrapper the pipeline uses.
+
+    Pipeline-derived fields are always refreshed from this run's scoring/
+    LLM output; stage, per-stage dates, and notes are preserved for
+    existing records and only defaulted on brand-new ones. Only non-
+    "Skip" postings are tracked by default, same bar as the report --
+    `force_include=True` (used for manually-added postings; see
+    manual_intake.py) skips that filter, since a deliberately-added
+    posting should show up regardless of how it scores. Records already
+    in the tracker but absent from this run's `enriched` (e.g. a listing
+    aged out) are left untouched -- the tracker is an append/update log,
+    not pruned in lockstep with seen_jobs.json, so application history
+    survives a listing's expiry.
 
     `llm_spend` (see llm_analysis.summarize_spend), when given, is appended
     to `llm_spend_log` -- a per-run history alongside the data it was spent
     analyzing, mirroring state.py's `runs` log."""
     today = today or date.today().isoformat()
-    data = load(path)
-    apps = data["applications"]
+    apps = data.setdefault("applications", {})
 
-    eligible = [r for r in enriched if r["score"].decision != "Skip"]
+    eligible = enriched if force_include else [r for r in enriched if r["score"].decision != "Skip"]
     for record in eligible:
         key = record["posting"].key
         llm_result = llm_results.get(key)
@@ -132,9 +141,26 @@ def sync(
             apps[key] = {**_default_user_fields(today), **pipeline_fields}
 
     _recompute_priority(apps)
-    data["applications"] = apps
     if llm_spend is not None:
         data.setdefault("llm_spend_log", []).append({"date": today, **llm_spend})
+    return data
+
+
+def sync(
+    path: str,
+    enriched: List[dict],
+    llm_results: Dict[str, dict],
+    today: Optional[str] = None,
+    llm_spend: Optional[dict] = None,
+    force_include: bool = False,
+) -> dict:
+    """File-path convenience wrapper around upsert(): load, merge, save.
+    Used by the pipeline, which always works against a local file checked
+    out by the GitHub Actions runner. Callers managing their own
+    persistence should call upsert() directly against an already-loaded
+    `data` dict instead."""
+    data = load(path)
+    data = upsert(data, enriched, llm_results, today=today, llm_spend=llm_spend, force_include=force_include)
     save(path, data)
     return data
 
