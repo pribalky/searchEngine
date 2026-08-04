@@ -12,6 +12,12 @@ from . import config, cv_loader, dedupe as dedupe_mod, report as report_mod, sco
 from .sources.base import JobPosting
 
 DESCRIPTION_STORAGE_LIMIT = 3000
+# Each named employer (Workday or otherwise) is its own source function, so
+# this loop's work is sources x role_families -- with 15 sources x 27
+# keywords, sequential fetching stretched a single run to 20+ minutes.
+# Bounded parallelism keeps that from growing linearly as more employers
+# are added in later phases.
+FETCH_MAX_WORKERS = 10
 
 
 def run(
@@ -52,10 +58,13 @@ def run(
             fetch_errors.append(f"sponsor register fetch failed: {exc}")
 
     raw_postings: List[JobPosting] = []
-    for source_fn in sources:
-        for role_family in role_families:
+    fetch_tasks = [(source_fn, role_family) for source_fn in sources for role_family in role_families]
+    with ThreadPoolExecutor(max_workers=FETCH_MAX_WORKERS) as executor:
+        future_to_task = {executor.submit(source_fn, role_family): (source_fn, role_family) for source_fn, role_family in fetch_tasks}
+        for future in as_completed(future_to_task):
+            source_fn, role_family = future_to_task[future]
             try:
-                raw_postings.extend(source_fn(role_family))
+                raw_postings.extend(future.result())
             except requests.RequestException as exc:
                 fetch_errors.append(f"{getattr(source_fn, '__name__', source_fn)}({role_family}): {exc}")
 
