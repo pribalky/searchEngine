@@ -103,6 +103,7 @@ def sync(
     enriched: List[dict],
     llm_results: Dict[str, dict],
     today: Optional[str] = None,
+    llm_spend: Optional[dict] = None,
 ) -> dict:
     """Upserts scored postings into the tracker. Pipeline-derived fields
     are always refreshed from this run's scoring/LLM output; stage,
@@ -111,7 +112,11 @@ def sync(
     bar as the report. Records already in the tracker but absent from this
     run's `enriched` (e.g. a listing aged out) are left untouched -- the
     tracker is an append/update log, not pruned in lockstep with
-    seen_jobs.json, so application history survives a listing's expiry."""
+    seen_jobs.json, so application history survives a listing's expiry.
+
+    `llm_spend` (see llm_analysis.summarize_spend), when given, is appended
+    to `llm_spend_log` -- a per-run history alongside the data it was spent
+    analyzing, mirroring state.py's `runs` log."""
     today = today or date.today().isoformat()
     data = load(path)
     apps = data["applications"]
@@ -128,6 +133,8 @@ def sync(
 
     _recompute_priority(apps)
     data["applications"] = apps
+    if llm_spend is not None:
+        data.setdefault("llm_spend_log", []).append({"date": today, **llm_spend})
     save(path, data)
     return data
 

@@ -144,6 +144,24 @@ def _to_dataframe(apps: dict) -> pd.DataFrame:
     return df.sort_values("priority_rank", na_position="last").reset_index(drop=True)
 
 
+def _render_spend_summary(spend_log: list) -> None:
+    """Cumulative Gemini spend across every run, sourced from the same
+    llm_spend_log the pipeline appends to on each sync (see
+    applications.sync) -- surfaced here so cost is visible without
+    digging through GitHub Actions logs or the raw JSON file."""
+    if not spend_log:
+        return
+    calls = sum(r.get("calls", 0) for r in spend_log)
+    errors = sum(r.get("errors", 0) for r in spend_log)
+    cost = sum(r.get("estimated_cost_usd", 0) for r in spend_log)
+    cols = st.columns(4)
+    cols[0].metric("Pipeline runs logged", len(spend_log))
+    cols[1].metric("Gemini calls (total)", calls)
+    cols[2].metric("Call errors (total)", errors)
+    cols[3].metric("Est. spend (total)", f"${cost:.4f}")
+    st.caption("Estimate only, placeholder pricing -- see .env.example. Per-run detail in data/applications.json's llm_spend_log.")
+
+
 def render() -> None:
     st.set_page_config(page_title="Job Application Tracker", layout="wide")
     st.title("Job Application Tracker")
@@ -154,6 +172,7 @@ def render() -> None:
 
     data, sha = _load_data()
     apps = data.get("applications", {})
+    _render_spend_summary(data.get("llm_spend_log", []))
 
     if not apps:
         st.info("No tracked applications yet -- run the job_search pipeline to populate this tracker.")

@@ -437,6 +437,12 @@ def test_pipeline_populates_application_tracker(tmp_path):
         assert record["llm_error"] == "GEMINI_API_KEY not set"
         assert record["priority_rank"] is not None
 
+    # No key -> every attempt is counted but none costs anything.
+    spend = result["llm_spend"]
+    assert spend["calls"] == len(apps)
+    assert spend["errors"] == len(apps)
+    assert spend["estimated_cost_usd"] == 0.0
+
     # A second run shouldn't clobber a stage change made in between.
     apps_data = applications_mod.load(applications_path)
     first_key = next(iter(apps_data["applications"]))
@@ -460,3 +466,88 @@ def test_pipeline_populates_application_tracker(tmp_path):
     updated = second["applications"]["applications"][first_key]
     assert updated["stage"] == "Applied"
     assert updated["applied_date"] == "2026-07-10"
+
+
+class _FakeGeminiResponse:
+    def __init__(self):
+        import json as json_mod
+
+        self.text = json_mod.dumps(
+            {
+                "cv_match_gap": "Strong governance overlap.",
+                "recruiter_pass_pct": 70,
+                "hiring_manager_pass_pct": 65,
+                "worth_applying": "Yes",
+                "worth_applying_reason": "Good match.",
+                "cv_to_use": "architecture_governance",
+                "recommendation": "Emphasise governance controls work.",
+            }
+        )
+
+        class Usage:
+            prompt_token_count = 1200
+            candidates_token_count = 250
+            total_token_count = 1450
+
+        self.usage_metadata = Usage()
+
+
+class _FakeGeminiClient:
+    class models:
+        @staticmethod
+        def generate_content(model, contents, config):
+            return _FakeGeminiResponse()
+
+
+def test_pipeline_logs_real_llm_spend_and_skips_already_analyzed_on_rerun(tmp_path):
+    """With an injected client_factory standing in for the real Gemini
+    SDK, spend logging should reflect actual token usage on the first run
+    (new postings), then drop to zero on a re-run since analyze_many only
+    calls out for postings the tracker hasn't already seen."""
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    (cv_dir / "architecture_governance.md").write_text(
+        "Enterprise Architecture, Architecture Governance, Design Authority, "
+        "Technology Strategy, Stakeholder Management, Banking experience."
+    )
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+    applications_path = str(tmp_path / "data" / "applications.json")
+
+    first = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+        applications_path=applications_path,
+        gemini_api_key="fake-key",
+        llm_client_factory=_FakeGeminiClient,
+    )
+    non_skip_count = len([r for r in first["enriched"] if r["score"].decision != "Skip"])
+    assert first["llm_spend"]["calls"] == non_skip_count
+    assert first["llm_spend"]["errors"] == 0
+    assert first["llm_spend"]["prompt_tokens"] == 1200 * non_skip_count
+    assert first["llm_spend"]["estimated_cost_usd"] > 0
+
+    data = applications_mod.load(applications_path)
+    assert len(data["llm_spend_log"]) == 1
+    assert data["llm_spend_log"][0]["calls"] == non_skip_count
+
+    second = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 11),
+        force=True,
+        applications_path=applications_path,
+        gemini_api_key="fake-key",
+        llm_client_factory=_FakeGeminiClient,
+    )
+    assert second["llm_spend"]["calls"] == 0
+    assert second["llm_spend"]["estimated_cost_usd"] == 0.0

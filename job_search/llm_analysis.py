@@ -23,6 +23,14 @@ from typing import Dict, List, Optional
 
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
+# Placeholder pricing (USD per 1M tokens) -- these are NOT verified against
+# current Gemini billing and exist only so per-run spend logging has a
+# number to show from the first live run. Check your Gemini console/
+# billing page for the actual rate for GEMINI_MODEL and override via env
+# vars if it differs; the estimate is only as good as these two values.
+INPUT_PRICE_PER_MTOK = float(os.environ.get("GEMINI_INPUT_PRICE_PER_MTOK", "0.30"))
+OUTPUT_PRICE_PER_MTOK = float(os.environ.get("GEMINI_OUTPUT_PRICE_PER_MTOK", "2.50"))
+
 SYSTEM_INSTRUCTION = (
     "You are assisting a UK technology-leadership job seeker (Enterprise/"
     "Solution/Business Architecture, Architecture Governance, Technology "
@@ -83,6 +91,9 @@ class LLMAnalysis:
     cv_to_use: str
     recommendation: str
     error: Optional[str] = None
+    prompt_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
 
 
 def _build_prompt(title: str, company: str, description: str, cvs: Dict[str, str]) -> str:
@@ -129,6 +140,7 @@ def analyze(
             config=config,
         )
         payload = json.loads(response.text)
+        usage = getattr(response, "usage_metadata", None)
         return LLMAnalysis(
             cv_match_gap=payload["cv_match_gap"],
             recruiter_pass_pct=int(payload["recruiter_pass_pct"]),
@@ -137,6 +149,9 @@ def analyze(
             worth_applying_reason=payload["worth_applying_reason"],
             cv_to_use=payload["cv_to_use"],
             recommendation=payload["recommendation"],
+            prompt_tokens=getattr(usage, "prompt_token_count", None) if usage else None,
+            output_tokens=getattr(usage, "candidates_token_count", None) if usage else None,
+            total_tokens=getattr(usage, "total_token_count", None) if usage else None,
         )
     except Exception as exc:  # noqa: BLE001 -- LLM issues must never crash the pipeline run
         return LLMAnalysis("", None, None, "", "", "", "", error=str(exc))
@@ -168,3 +183,26 @@ def analyze_many(
         )
         results[posting.key] = asdict(result)
     return results
+
+
+def estimate_cost_usd(prompt_tokens: int, output_tokens: int) -> float:
+    return prompt_tokens / 1_000_000 * INPUT_PRICE_PER_MTOK + output_tokens / 1_000_000 * OUTPUT_PRICE_PER_MTOK
+
+
+def summarize_spend(results: Dict[str, dict]) -> dict:
+    """Aggregates one run's analyze_many() output into a spend summary --
+    every analyzed posting counts toward `calls` (so a spike in `errors`
+    is visible even when token/cost totals look low), but only successful
+    calls contribute tokens since a result that errored before a response
+    came back has none to sum."""
+    prompt_tokens = sum(r.get("prompt_tokens") or 0 for r in results.values())
+    output_tokens = sum(r.get("output_tokens") or 0 for r in results.values())
+    total_tokens = sum(r.get("total_tokens") or 0 for r in results.values())
+    return {
+        "calls": len(results),
+        "errors": sum(1 for r in results.values() if r.get("error")),
+        "prompt_tokens": prompt_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+        "estimated_cost_usd": round(estimate_cost_usd(prompt_tokens, output_tokens), 6),
+    }

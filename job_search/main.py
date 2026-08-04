@@ -125,6 +125,25 @@ def post_github_issue(title: str, body: str, report_path: str) -> None:
     print(f"Created issue: {resp.json().get('html_url')}")
 
 
+def print_llm_spend(spend: dict) -> None:
+    """Per-run Gemini spend summary (see llm_analysis.summarize_spend),
+    printed to stdout so it shows up directly in the GitHub Actions log --
+    no need to dig into data/applications.json's llm_spend_log to see
+    what a run cost. Cost is an estimate against placeholder pricing; see
+    .env.example for the override env vars."""
+    if spend is None:
+        return  # applications_path wasn't set for this run
+    if spend["calls"] == 0:
+        print("Gemini spend this run: no new postings to analyze.")
+        return
+    print(
+        f"Gemini spend this run: {spend['calls']} call(s), {spend['errors']} error(s), "
+        f"{spend['prompt_tokens']:,} prompt + {spend['output_tokens']:,} output tokens, "
+        f"~${spend['estimated_cost_usd']:.4f} estimated "
+        "(placeholder pricing -- verify against your Gemini console; see .env.example)."
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="UK Tech Leadership job search pipeline")
     parser.add_argument("--dry-run", action="store_true", help="run the pipeline but do not post a GitHub issue")
@@ -162,6 +181,7 @@ def main():
     if result["fetch_errors"]:
         print(f"{len(result['fetch_errors'])} fetch error(s): {result['fetch_errors']}", file=sys.stderr)
     print(f"Report written to {result['report_path']}")
+    print_llm_spend(result.get("llm_spend"))
 
     if args.post_issue:
         post_github_issue(

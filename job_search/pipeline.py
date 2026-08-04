@@ -112,8 +112,9 @@ def run(
         f.write(report_markdown)
 
     applications_result = None
+    llm_spend = None
     if applications_path is not None:
-        applications_result = _sync_applications(
+        applications_result, llm_spend = _sync_applications(
             applications_path, enriched, cvs, today_str, gemini_api_key, gemini_model, llm_client_factory
         )
 
@@ -126,6 +127,7 @@ def run(
         "fetch_errors": fetch_errors,
         "enriched": enriched,
         "applications": applications_result,
+        "llm_spend": llm_spend,
     }
 
 
@@ -137,11 +139,12 @@ def _sync_applications(
     gemini_api_key: Optional[str],
     gemini_model: str,
     llm_client_factory,
-) -> dict:
+):
     """Analyzes only postings the tracker hasn't seen before (see
     llm_analysis.analyze_many), then upserts everything non-Skip into
     data/applications.json -- new postings get default tracking fields,
-    existing ones keep their stage/dates/notes untouched."""
+    existing ones keep their stage/dates/notes untouched. Returns
+    (applications_data, llm_spend_summary)."""
     eligible = [r for r in enriched if r["score"].decision != "Skip"]
     existing = applications_mod.load(applications_path)
     already_analyzed = set(existing["applications"].keys())
@@ -153,7 +156,9 @@ def _sync_applications(
         model=gemini_model,
         client_factory=llm_client_factory,
     )
-    return applications_mod.sync(applications_path, enriched, llm_results, today=today_str)
+    spend = llm_analysis.summarize_spend(llm_results)
+    data = applications_mod.sync(applications_path, enriched, llm_results, today=today_str, llm_spend=spend)
+    return data, spend
 
 
 def _passes_filters(posting: JobPosting) -> bool:

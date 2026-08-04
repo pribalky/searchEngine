@@ -132,6 +132,24 @@ def test_apply_stage_change_not_applied_has_no_date_field():
     assert updated["applied_date"] == "2026-07-10"  # untouched, no date field for this stage
 
 
+def test_sync_appends_llm_spend_log(tmp_path):
+    path = str(tmp_path / "applications.json")
+    spend = {"calls": 2, "errors": 0, "prompt_tokens": 1800, "output_tokens": 350, "total_tokens": 2150, "estimated_cost_usd": 0.0014}
+    data = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-09", llm_spend=spend)
+    assert data["llm_spend_log"] == [{"date": "2026-07-09", **spend}]
+
+    # A second run appends rather than overwriting.
+    data = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-15", llm_spend=spend)
+    assert len(data["llm_spend_log"]) == 2
+    assert data["llm_spend_log"][-1]["date"] == "2026-07-15"
+
+
+def test_sync_without_llm_spend_leaves_log_unset(tmp_path):
+    path = str(tmp_path / "applications.json")
+    data = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-09")
+    assert "llm_spend_log" not in data
+
+
 def test_save_and_load_round_trip(tmp_path):
     path = str(tmp_path / "nested" / "applications.json")
     data = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-09")
