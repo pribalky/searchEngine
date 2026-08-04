@@ -106,15 +106,33 @@ FINANCIAL_SERVICES_EMPLOYERS = [
 NAMED_EMPLOYERS = BANKING_EMPLOYERS + CONSULTING_EMPLOYERS + FINANCIAL_SERVICES_EMPLOYERS
 
 # Employers with a direct careers-site adapter (see sources/workday.py),
-# queried in addition to the Adzuna/Reed broad-market search. Confirmed
-# via their public career site URLs to run on Workday; a generic client
-# handles all three since Workday exposes the same JSON search API
-# regardless of tenant. Phase 1 -- other named employers may also run on
-# Workday but haven't been individually confirmed yet.
+# queried in addition to the Adzuna/Reed broad-market search. A generic
+# client handles all of these since Workday exposes the same JSON search
+# API regardless of tenant. Identifiers are researched from each
+# employer's public career site URLs, not verified against the live API
+# from this sandbox (outbound access to myworkdayjobs.com is blocked
+# here) -- confirmed via a real GitHub Actions run instead, same caveat
+# as the original Phase 1 trio.
 WORKDAY_EMPLOYERS = [
+    # Phase 1
     {"name": "Barclays", "tenant": "barclays", "host": "wd3", "site": "External_Career_Site_Barclays"},
     {"name": "abrdn", "tenant": "abrdn", "host": "wd3", "site": "abrdn"},
     {"name": "Baillie Gifford", "tenant": "bailliegifford", "host": "wd3", "site": "BaillieGiffordCareers"},
+    # Phase 2 -- legacy RBS tenant naming retained by NatWest Group
+    {"name": "NatWest", "tenant": "rbs", "host": "wd3", "site": "RBS"},
+    # Phase 2 -- covers Lloyds, Halifax, Bank of Scotland, and Scottish
+    # Widows: one shared Workday site across the whole group, no separate
+    # Scottish Widows careers site/ATS.
+    {"name": "Lloyds Banking Group", "tenant": "lbg", "host": "wd3", "site": "LBG_Careers"},
+    {"name": "Nationwide", "tenant": "nationwide", "host": "wd1", "site": "Nationwide_Career"},
+    {"name": "Aviva", "tenant": "aviva", "host": "wd1", "site": "External"},
+    {"name": "M&G", "tenant": "mgpru", "host": "wd3", "site": "mandgprudential"},
+    {"name": "Prudential", "tenant": "prudential", "host": "wd3", "site": "prudential"},
+    {"name": "Fidelity International", "tenant": "fil", "host": "wd3", "site": "001"},
+    # Phase 2 -- UK site hosted under the global Transamerica/Aegon tenant.
+    {"name": "Aegon", "tenant": "transamerica", "host": "wd5", "site": "AUK_JobSite"},
+    {"name": "Citi", "tenant": "citi", "host": "wd5", "site": "2"},
+    {"name": "Morgan Stanley", "tenant": "ms", "host": "wd5", "site": "External"},
 ]
 
 # Candidate background keywords, used both as the "hard skill" taxonomy for
