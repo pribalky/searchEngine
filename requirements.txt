@@ -1,2 +1,9 @@
 requests>=2.31
 python-dateutil>=2.8
+scikit-learn>=1.4
+google-genai>=0.3
+
+# For the application tracker (app/tracker.py), not the pipeline itself --
+# only needed where you actually run `streamlit run app/tracker.py`.
+streamlit>=1.38
+pandas>=2.0

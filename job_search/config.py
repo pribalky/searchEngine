@@ -34,10 +34,15 @@ ROLE_FAMILIES = [
     "Business Architecture",
     "Director of Architecture",
     "Head of Architecture",
-    "Product Owner",
-    "Program Manager",
-    "Process Analyst",
 ]
+
+# Excluded from ROLE_FAMILIES: "Product Owner", "Program Manager", "Process
+# Analyst" were in the original prompt's list but are generic job titles
+# used across the entire UK market, not specific to an architecture/
+# governance background. Searching them broadened results ~10x while
+# adding almost no relevant matches (a live run scored 86% of the results
+# they contributed as "Skip") -- directly against the "optimise for
+# interview probability, not job count" objective.
 
 # Named priority employers, tagged by sector tier. Used to flag (not filter)
 # results, since MVP discovery is via job-board APIs rather than scraping
@@ -67,9 +72,68 @@ CONSULTING_EMPLOYERS = [
     "Infosys",
     "Synechron",
     "Coforge",
+    # Atos, AECOM, CreateFuture: tagged here for sector/reporting purposes,
+    # but not yet covered by a direct careers-site adapter -- confirmed
+    # (Phase 2 investigation) to run on SmartRecruiters (Atos, tenant
+    # Atos1; AECOM, tenant AECOM2) and Greenhouse (CreateFuture, board
+    # token xdesign) respectively, neither of which has an adapter built
+    # yet (see WORKDAY_EMPLOYERS below for the Phase 1 Workday-only set).
+    "Atos",
+    "AECOM",
+    "CreateFuture",
 ]
 
-NAMED_EMPLOYERS = BANKING_EMPLOYERS + CONSULTING_EMPLOYERS
+# Broader financial services beyond retail/investment banking: asset
+# management, insurance, pensions -- several headquartered in Scotland,
+# which also happen to satisfy the commute filter without an exception.
+FINANCIAL_SERVICES_EMPLOYERS = [
+    "abrdn",
+    "Baillie Gifford",
+    "Standard Life",
+    "Phoenix Group",
+    "Scottish Widows",
+    "Aegon",
+    "Royal London",
+    "Aviva",
+    "Legal & General",
+    "M&G",
+    "Prudential",
+    "Schroders",
+    "Fidelity International",
+    "Virgin Money",
+]
+
+NAMED_EMPLOYERS = BANKING_EMPLOYERS + CONSULTING_EMPLOYERS + FINANCIAL_SERVICES_EMPLOYERS
+
+# Employers with a direct careers-site adapter (see sources/workday.py),
+# queried in addition to the Adzuna/Reed broad-market search. A generic
+# client handles all of these since Workday exposes the same JSON search
+# API regardless of tenant. Identifiers are researched from each
+# employer's public career site URLs, not verified against the live API
+# from this sandbox (outbound access to myworkdayjobs.com is blocked
+# here) -- confirmed via a real GitHub Actions run instead, same caveat
+# as the original Phase 1 trio.
+WORKDAY_EMPLOYERS = [
+    # Phase 1
+    {"name": "Barclays", "tenant": "barclays", "host": "wd3", "site": "External_Career_Site_Barclays"},
+    {"name": "abrdn", "tenant": "abrdn", "host": "wd3", "site": "abrdn"},
+    {"name": "Baillie Gifford", "tenant": "bailliegifford", "host": "wd3", "site": "BaillieGiffordCareers"},
+    # Phase 2 -- legacy RBS tenant naming retained by NatWest Group
+    {"name": "NatWest", "tenant": "rbs", "host": "wd3", "site": "RBS"},
+    # Phase 2 -- covers Lloyds, Halifax, Bank of Scotland, and Scottish
+    # Widows: one shared Workday site across the whole group, no separate
+    # Scottish Widows careers site/ATS.
+    {"name": "Lloyds Banking Group", "tenant": "lbg", "host": "wd3", "site": "LBG_Careers"},
+    {"name": "Nationwide", "tenant": "nationwide", "host": "wd1", "site": "Nationwide_Career"},
+    {"name": "Aviva", "tenant": "aviva", "host": "wd1", "site": "External"},
+    {"name": "M&G", "tenant": "mgpru", "host": "wd3", "site": "mandgprudential"},
+    {"name": "Prudential", "tenant": "prudential", "host": "wd3", "site": "prudential"},
+    {"name": "Fidelity International", "tenant": "fil", "host": "wd3", "site": "001"},
+    # Phase 2 -- UK site hosted under the global Transamerica/Aegon tenant.
+    {"name": "Aegon", "tenant": "transamerica", "host": "wd5", "site": "AUK_JobSite"},
+    {"name": "Citi", "tenant": "citi", "host": "wd5", "site": "2"},
+    {"name": "Morgan Stanley", "tenant": "ms", "host": "wd5", "site": "External"},
+]
 
 # Candidate background keywords, used both as the "hard skill" taxonomy for
 # ATS-style scoring and to build the base profile-match vocabulary.
@@ -92,10 +156,140 @@ PROFILE_KEYWORDS = [
     "Banking",
     "Financial Services",
     "Consulting",
+    # Added from real usage patterns in the user's own CVs, rather than
+    # guessed generically -- these are phrases that actually recur across
+    # their CV variants (architecture governance, product ownership).
+    "Feasibility Assessment",
+    "Impact Assessment",
+    "Governance Controls",
+    "Solution Design",
+    "Architecture Review",
+    "Product Ownership",
+    "Definition of Ready",
+    "Delivery Governance",
+    "Technology Risk",
+    "Architecture Standards",
+]
+
+# Partial credit given when a JD keyword only appears in a CV's job-title
+# text (e.g. a title mentioning "Design Authority") but not backed by any
+# responsibility/achievement bullet. Full credit (1.0) requires the
+# keyword to show up in demonstrated responsibility text instead --
+# titles alone are a weaker, less trustworthy signal of real experience.
+CV_TITLE_MATCH_WEIGHT = 0.25
+
+# A keyword-overlap percentage computed from very few matched keywords
+# isn't statistically reliable -- a JD that only happens to mention one
+# PROFILE_KEYWORDS phrase (e.g. "Financial Services", because the employer
+# IS a financial services company, not because the role has anything to do
+# with architecture) would otherwise round up to a 100% match purely
+# because that one word also recurs somewhere in the CV. Flooring the
+# denominator at this value means a single or double incidental hit can't
+# reach full marks on its own -- ATS/Hiring Manager Match only hits 100%
+# once genuine overlap spans several distinct keywords.
+MIN_KEYWORD_HITS_FOR_FULL_CONFIDENCE = 2
+
+# Overall Fit blend weights. ATS Match and Hiring Manager Match are both
+# responsibility-weighted (see CV_TITLE_MATCH_WEIGHT and score_posting);
+# Recruiter Match is a pure title-to-title comparison, kept small so a
+# title mismatch alone (common when a formal job title undersells actual
+# scope) can't dominate the score. Semantic Match (see semantic.py) is a
+# TF-IDF/cosine-similarity signal that catches paraphrased overlap the
+# literal fixed-keyword matching above misses entirely (e.g. "established
+# governance controls" vs "define delivery gate criteria" share no exact
+# phrase but do share weighted vocabulary) -- weighted equally alongside
+# ats/hiring_manager since it's the closest thing to real JD matching
+# this rule-based pipeline does.
+OVERALL_FIT_WEIGHTS = {
+    "ats": 0.30,
+    "recruiter": 0.10,
+    "hiring_manager": 0.30,
+    "semantic": 0.30,
+}
+
+# Only postings that are either fully remote, or based in/near one of
+# these locations, are worth surfacing -- a "Hybrid" role still requires
+# an office presence, so it only counts if that office is here too.
+ACCEPTABLE_LOCATIONS = ["Edinburgh", "Glasgow", "Scotland"]
+
+# Postings requiring a bigger seniority jump than this are excluded from
+# the report entirely (still scored/tracked in state, just not shown --
+# same treatment as a "Skip" decision). None/unclear gap is still allowed
+# through, since that just means the title couldn't be confidently
+# classified, not that it's necessarily a big stretch.
+MAX_ACCEPTABLE_SENIORITY_GAP = 2
+
+# Title-keyword exclusion list: security/infrastructure roles (the
+# original ask) plus pure IC software-engineering roles that pass the
+# architecture-anchor gate on incidental keyword overlap but aren't
+# genuinely architecture/governance/leadership positions. Matched with
+# word boundaries (see tagging.is_excluded_title) so e.g. "Software
+# Engineer" doesn't false-positive on "Software Engineering" as a
+# department/discipline name in a legitimate leadership title.
+EXCLUDED_TITLE_KEYWORDS = [
+    "Security Architect",
+    "Security Engineer",
+    "Security Analyst",
+    "Cyber Security",
+    "Infrastructure Engineer",
+    "Infrastructure Architect",
+    "Infrastructure Lead",
+    "Network Engineer",
+    "Network Architect",
+    "DevOps",
+    "Site Reliability",
+    "SRE",
+    "Software Engineer",
+    "Software Developer",
+    "Full Stack Developer",
+    "Full-Stack Developer",
+    "Backend Developer",
+    "Frontend Developer",
+    "Python Developer",
+    "Java Developer",
+    "DBA",
+    "Database Administrator",
+    "Data Modeller",
+    "QA Engineer",
+    "Test Engineer",
+    "Salesforce Developer",
+    "Salesforce Engineer",
 ]
 
 # Vacancies older than this are excluded regardless of source.
 MAX_POSTING_AGE_DAYS = 45
+
+# A posting with fewer days left than this before it ages out of the
+# verification window is flagged as urgent -- the closest proxy available
+# to "apply before this goes stale" since job boards don't expose real
+# application deadlines.
+URGENT_DAYS_THRESHOLD = 10
+
+# Seniority ladder for architecture-track titles, ordered low to high.
+# Matched against job titles only (descriptions are too noisy -- "reports
+# to the Head of Engineering" would falsely inflate level). Checked from
+# the highest level down so a compound title like "Head of Enterprise
+# Architecture" resolves to the more senior descriptor ("Head of") rather
+# than the lower one ("Enterprise Architecture") it also contains.
+#
+# Calibrated against the user's actual current role (Associate Architect)
+# rather than a generic ladder: their title reads junior but the
+# responsibilities already sit at Architect/Solution Architect/Business
+# Architect level, so those are grouped as the same (current) level.
+SENIORITY_LADDER = {
+    0: ["Associate Architect", "Solution Architect", "Business Architect", "Architect"],
+    1: ["Senior Architect", "Lead Architect", "Principal Architect"],
+    2: ["Enterprise Architect", "Domain Architect"],
+    3: ["Head of Architecture", "Director of Architecture", "Head of", "Director"],
+    4: ["VP", "Vice President"],
+}
+CURRENT_SENIORITY_LEVEL = 0
+
+# Points shaved off Interview Probability per seniority level above the
+# user's current one. Deliberately modest (not a hard veto): a bigger
+# title doesn't always mean bigger real responsibilities, so a 2-level
+# jump should score lower, not vanish from Priority Apply/Apply entirely.
+SENIORITY_LEVEL_PENALTY = 9
 
 # Minimum gap (in days) between scheduled runs, enforced by main.py rather
 # than relying purely on cron scheduling semantics.
@@ -145,10 +339,28 @@ SENIOR_TITLE_SIGNALS = [
     "Director",
     "Head of",
     "Principal",
-    "Lead",
     "Senior Manager",
     "VP",
     "Vice President",
+]
+# "Lead" was deliberately dropped: as a single generic word it appears in
+# almost any CV ("led a team", "technical leadership") and any job title
+# ("Technical Lead", "Lead Data Engineer"), so it inflated recruiter-match
+# scores for roles with nothing to do with architecture/governance.
+
+# A vacancy can't be a genuine architecture/governance match without at
+# least one of these appearing -- used as a hard gate on Priority
+# Apply/Apply decisions so generic engineering-leadership titles (e.g.
+# "Technical Motor Claims Lead") can't outscore real architecture roles
+# just from incidental keyword overlap elsewhere in the JD.
+CORE_ANCHOR_KEYWORDS = [
+    "Architect",
+    "Architecture",
+    "Design Authority",
+    "Technology Strategy",
+    "Technology Governance",
+    "AI Governance",
+    "Business Architecture",
 ]
 
 # Role-category tagging rules: report section name -> keywords matched

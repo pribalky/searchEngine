@@ -1,14 +1,18 @@
 name: Job Search Pipeline
 
 on:
-  workflow_dispatch: {}
-  # Enable the schedule once your 4 CVs are in cv/ and a manual
-  # workflow_dispatch run has been verified. main.py self-checks that at
-  # least MIN_DAYS_BETWEEN_RUNS have elapsed, so a daily cron below still
-  # yields an "every other day" cadence without the day-of-month reset
-  # problems of `*/2` cron syntax.
-  # schedule:
-  #   - cron: "0 7 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the every-other-day gap check (useful for manual testing)"
+        type: boolean
+        default: false
+  # Runs daily; main.py self-checks that at least MIN_DAYS_BETWEEN_RUNS
+  # (2) have elapsed since the last successful run, so this yields a true
+  # "every other day" cadence without the day-of-month reset problems of
+  # `*/2` cron syntax. 07:00 UTC.
+  schedule:
+    - cron: "0 7 * * *"
 
 permissions:
   contents: write
@@ -32,14 +36,16 @@ jobs:
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
           REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python -m job_search.main --post-issue
+        run: python -m job_search.main --post-issue ${{ inputs.force && '--force' || '' }}
 
       - name: Commit updated state and report
         run: |
           git config user.name "job-search-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/seen_jobs.json reports/
+          git add data/seen_jobs.json data/applications.json reports/
           git diff --cached --quiet || git commit -m "Job search run $(date -u +%Y-%m-%d)"
           git push
+

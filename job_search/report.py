@@ -8,6 +8,7 @@ from . import config
 
 TABLE_COLUMNS = [
     "Posted Date",
+    "Days Left",
     "Job Title",
     "Company",
     "Location",
@@ -17,7 +18,9 @@ TABLE_COLUMNS = [
     "ATS Match",
     "Recruiter Match",
     "Hiring Manager Match",
+    "Semantic Match",
     "Interview Probability",
+    "Career Stretch",
     "Why It Matches",
     "Key Gaps",
     "CV Version",
@@ -47,8 +50,10 @@ def _key_gaps(record: dict) -> str:
 def _row(record: dict) -> List[str]:
     posting = record["posting"]
     score = record["score"]
+    days_left = record.get("days_left")
     return [
         posting.posted_date,
+        str(days_left) if days_left is not None else "?",
         posting.title,
         posting.company,
         posting.location,
@@ -58,7 +63,9 @@ def _row(record: dict) -> List[str]:
         str(score.ats_match),
         str(score.recruiter_match),
         str(score.hiring_manager_match),
+        str(score.semantic_match),
         str(score.interview_probability),
+        score.career_stretch_level,
         _why_it_matches(record),
         _key_gaps(record),
         score.best_cv or "New tailored version required",
@@ -80,6 +87,20 @@ def render_table(records: List[dict]) -> str:
 
 def _sorted_master(records):
     return sorted(records, key=lambda r: (r["posting"].posted_date, r["score"].interview_probability), reverse=True)
+
+
+def _closing_soon(records: List[dict]) -> List[dict]:
+    """Priority Apply/Apply roles running out of runway, soonest first --
+    directly serves 'apply before it goes stale with enough time to
+    finish the application'."""
+    urgent = [
+        r
+        for r in records
+        if r["score"].decision in ("Priority Apply", "Apply")
+        and r.get("days_left") is not None
+        and r["days_left"] <= config.URGENT_DAYS_THRESHOLD
+    ]
+    return sorted(urgent, key=lambda r: r["days_left"])
 
 
 def _section(title: str, records: List[dict]) -> str:
@@ -108,8 +129,11 @@ def _market_patterns(records: List[dict]) -> str:
             role_family_scores[posting.role_family].append(score.interview_probability)
         company_scores[posting.company].append(score.overall_fit)
         cv_recommendation_counter[score.best_cv or "New tailored version required"] += 1
-        if score.decision == "Priority Apply":
-            priority_48h.append(f"{posting.title} @ {posting.company} ({posting.url})")
+        days_left = r.get("days_left")
+        if score.decision in ("Priority Apply", "Apply") and days_left is not None and days_left <= 2:
+            priority_48h.append(
+                f"{posting.title} @ {posting.company} ({days_left}d left) ({posting.url})"
+            )
 
     top_keywords = ", ".join(k for k, _ in keyword_counter.most_common(10)) or "none detected"
     top_missing = ", ".join(k for k, _ in missing_counter.most_common(10)) or "none detected"
@@ -182,7 +206,13 @@ def build_report(
     verified_records: List[dict],
     excluded_count: int,
     cvs_loaded: int,
+    total_verified_count: int = None,
 ) -> str:
+    """verified_records is what gets rendered in every table/section. Pass
+    total_verified_count separately when the caller has already dropped
+    "Skip"-decision records before calling this, so the header can still
+    report the true total scored this run."""
+    total_verified_count = total_verified_count if total_verified_count is not None else len(verified_records)
     master = _sorted_master(verified_records)
     by_fit = sorted(verified_records, key=lambda r: r["score"].overall_fit, reverse=True)[:10]
     by_interview = sorted(verified_records, key=lambda r: r["score"].interview_probability, reverse=True)[:10]
@@ -190,33 +220,41 @@ def build_report(
 
     banking = [r for r in verified_records if r["sector"] == "Banking"]
     consulting = [r for r in verified_records if r["sector"] == "Consulting"]
-    visa_friendly = [r for r in verified_records if r["visa"] == "Likely"]
+    financial_services = [r for r in verified_records if r["sector"] == "Financial Services"]
+    visa_friendly = [r for r in verified_records if r["visa"] == "Registered Sponsor"]
     remote_hybrid = [r for r in verified_records if r["work_pattern"] in ("Remote", "Hybrid")]
-    stretch = [r for r in verified_records if r["stretch"] == "Stretch"]
+    stretch = [r for r in verified_records if r["score"].seniority_gap is not None and r["score"].seniority_gap >= 1]
 
     parts = [
         "# UK Technology Leadership Job Search Report",
         f"\n**Execution date:** {execution_date}",
-        f"\n**Method:** Adzuna + Reed job-board APIs (UK-scoped), each vacancy verified by "
-        f"posted-date window and a live HTTP check on the application link. Scoring is "
-        f"rule-based keyword overlap against your CV(s), not LLM reasoning -- treat scores "
-        f"as directional, not authoritative.",
-        f"\n**Verified vacancies:** {len(verified_records)} | **Excluded (failed verification):** "
+        f"\n**Method:** Adzuna + Reed job-board APIs (UK-scoped) plus direct careers-site "
+        f"searches for Barclays/abrdn/Baillie Gifford, each vacancy verified by posted-date "
+        f"window and a live HTTP check on the application link. Scoring is rule-based keyword "
+        f"overlap against your CV(s), not LLM reasoning -- treat scores as directional, not "
+        f"authoritative.",
+        f"\n**Verified vacancies:** {total_verified_count} | **Shown below (Stretch/Apply/Priority "
+        f"Apply only, Skip omitted):** {len(verified_records)} | **Excluded (failed verification):** "
         f"{excluded_count} | **CVs loaded:** {cvs_loaded}",
         "\n## Master Table (sorted by newest, then Interview Probability)",
         render_table(master),
+        _section(
+            f"Apply Now -- Closing Soon (Priority Apply/Apply, <= {config.URGENT_DAYS_THRESHOLD} days left, soonest first)",
+            _closing_soon(verified_records),
+        ),
         _section("Top 10 Highest Fit", by_fit),
         _section("Top 10 Highest Interview Probability", by_interview),
         _section("Top 10 Newest", by_newest),
         _section("Banking Opportunities", banking),
         _section("Consulting Opportunities", consulting),
+        _section("Financial Services Opportunities", financial_services),
     ]
 
     for category in config.ROLE_CATEGORY_RULES:
         matching = [r for r in verified_records if category in r["role_categories"]]
         parts.append(_section(category, matching))
 
-    parts.append(_section("Visa Sponsorship Friendly Roles", visa_friendly))
+    parts.append(_section("Registered Sponsor Roles (UK Home Office Register)", visa_friendly))
     parts.append(_section("Remote / Hybrid Roles", remote_hybrid))
     parts.append(_section("Strategic Stretch Roles", stretch))
 

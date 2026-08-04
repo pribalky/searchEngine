@@ -13,14 +13,16 @@ from dataclasses import replace
 
 import requests
 
-from . import config, pipeline
+from . import config, pipeline, sponsors
 from .sources.adzuna import AdzunaClient
 from .sources.reed import ReedClient
+from .sources.workday import WorkdayClient
 from .sources.base import JobPosting
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CV_DIR = os.path.join(REPO_ROOT, "cv")
 STATE_PATH = os.path.join(REPO_ROOT, "data", "seen_jobs.json")
+APPLICATIONS_PATH = os.path.join(REPO_ROOT, "data", "applications.json")
 REPORTS_DIR = os.path.join(REPO_ROOT, "reports")
 FIXTURES_DIR = os.path.join(REPO_ROOT, "tests", "fixtures")
 
@@ -53,7 +55,23 @@ def build_live_sources():
     def reed_search(keyword):
         return reed.search(keyword)
 
-    return [adzuna_search, reed_search]
+    workday_sources = [_make_workday_search(employer) for employer in config.WORKDAY_EMPLOYERS]
+
+    return [adzuna_search, reed_search] + workday_sources
+
+
+def _make_workday_search(employer_config):
+    client = WorkdayClient(
+        tenant=employer_config["tenant"],
+        host=employer_config["host"],
+        site=employer_config["site"],
+        company_name=employer_config["name"],
+    )
+
+    def search(keyword):
+        return client.search(keyword)
+
+    return search
 
 
 def build_fixture_sources():
@@ -75,6 +93,10 @@ def build_fixture_sources():
         return [replace(p, role_family=keyword) for p in load(reed_path)]
 
     return [adzuna_search, reed_search]
+
+
+def fetch_live_sponsor_names():
+    return sponsors.fetch_sponsor_names(session=requests.Session(), timeout=30)
 
 
 def post_github_issue(title: str, body: str, report_path: str) -> None:
@@ -103,6 +125,25 @@ def post_github_issue(title: str, body: str, report_path: str) -> None:
     print(f"Created issue: {resp.json().get('html_url')}")
 
 
+def print_llm_spend(spend: dict) -> None:
+    """Per-run Gemini spend summary (see llm_analysis.summarize_spend),
+    printed to stdout so it shows up directly in the GitHub Actions log --
+    no need to dig into data/applications.json's llm_spend_log to see
+    what a run cost. Cost is an estimate against placeholder pricing; see
+    .env.example for the override env vars."""
+    if spend is None:
+        return  # applications_path wasn't set for this run
+    if spend["calls"] == 0:
+        print("Gemini spend this run: no new postings to analyze.")
+        return
+    print(
+        f"Gemini spend this run: {spend['calls']} call(s), {spend['errors']} error(s), "
+        f"{spend['prompt_tokens']:,} prompt + {spend['output_tokens']:,} output tokens, "
+        f"~${spend['estimated_cost_usd']:.4f} estimated "
+        "(placeholder pricing -- verify against your Gemini console; see .env.example)."
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="UK Tech Leadership job search pipeline")
     parser.add_argument("--dry-run", action="store_true", help="run the pipeline but do not post a GitHub issue")
@@ -112,6 +153,14 @@ def main():
     args = parser.parse_args()
 
     sources = build_fixture_sources() if args.fixtures else build_live_sources()
+    # Fixture/demo mode stays fully network-free; the real sponsor registry
+    # lookup only runs against live data.
+    sponsor_names_fetcher = None if args.fixtures else fetch_live_sponsor_names
+
+    # Fixture/demo mode never spends real Gemini quota, same rationale as
+    # the sponsor-fetcher swap above: fixture postings are canned data, so
+    # an LLM call against them buys no signal.
+    gemini_api_key = None if args.fixtures else os.environ.get("GEMINI_API_KEY")
 
     result = pipeline.run(
         cv_dir=CV_DIR,
@@ -119,6 +168,9 @@ def main():
         reports_dir=REPORTS_DIR,
         sources=sources,
         force=args.force,
+        sponsor_names_fetcher=sponsor_names_fetcher,
+        applications_path=APPLICATIONS_PATH,
+        gemini_api_key=gemini_api_key,
     )
 
     if result["skipped"]:
@@ -129,6 +181,7 @@ def main():
     if result["fetch_errors"]:
         print(f"{len(result['fetch_errors'])} fetch error(s): {result['fetch_errors']}", file=sys.stderr)
     print(f"Report written to {result['report_path']}")
+    print_llm_spend(result.get("llm_spend"))
 
     if args.post_issue:
         post_github_issue(
