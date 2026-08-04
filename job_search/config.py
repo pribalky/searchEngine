@@ -72,6 +72,12 @@ CONSULTING_EMPLOYERS = [
     "Infosys",
     "Synechron",
     "Coforge",
+    # Atos, AECOM, CreateFuture: tagged here for sector/reporting purposes,
+    # but not yet covered by a direct careers-site adapter -- confirmed
+    # (Phase 2 investigation) to run on SmartRecruiters (Atos, tenant
+    # Atos1; AECOM, tenant AECOM2) and Greenhouse (CreateFuture, board
+    # token xdesign) respectively, neither of which has an adapter built
+    # yet (see WORKDAY_EMPLOYERS below for the Phase 1 Workday-only set).
     "Atos",
     "AECOM",
     "CreateFuture",
