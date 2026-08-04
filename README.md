@@ -91,6 +91,25 @@ block. The pipeline self-checks elapsed time since the last successful run
 (via `data/seen_jobs.json`), so the cron cadence just needs to be at least
 as frequent as your desired gap -- it won't spam more often than that.
 
+### 7. (Optional) LLM analysis + application tracker
+
+Add a `GEMINI_API_KEY` (Actions secret, or your local `.env`) and every run
+also enriches new postings with Gemini-generated CV match/gap analysis,
+recruiter/hiring-manager pass %, a worth-applying verdict, recommended CV,
+and section-level edit notes, upserted into `data/applications.json` (only
+for postings not already tracked, so repeat runs don't re-spend on the
+same backlog). Without the key the pipeline runs exactly as before --
+tracker rows just get no LLM fields.
+
+View and update it (stage, notes) with the Streamlit app:
+
+```bash
+streamlit run app/tracker.py
+```
+
+See `app/README.md` for deploying it (e.g. Streamlit Community Cloud) so
+you can update application status from your phone.
+
 ## Tests
 
 ```bash

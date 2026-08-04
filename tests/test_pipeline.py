@@ -3,7 +3,7 @@ import os
 from dataclasses import replace
 from datetime import date
 
-from job_search import pipeline
+from job_search import applications as applications_mod, pipeline
 from job_search.sources.base import JobPosting
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -398,3 +398,65 @@ def test_pipeline_prunes_previously_stored_jobs_that_fail_new_filters(tmp_path):
     with open(state_path, encoding="utf-8") as f:
         state = json_mod.load(f)
     assert "adzuna:old-1" not in state["jobs"]
+
+
+def test_pipeline_populates_application_tracker(tmp_path):
+    """End-to-end: applications_path wiring should upsert non-Skip
+    postings into the tracker, ranked by priority. No Gemini key is
+    passed, so LLM fields degrade gracefully rather than making a real
+    API call -- exercises the same resilience path as a user running
+    without GEMINI_API_KEY set."""
+    cv_dir = tmp_path / "cv"
+    cv_dir.mkdir()
+    (cv_dir / "architecture_governance.md").write_text(
+        "Enterprise Architecture, Architecture Governance, Design Authority, "
+        "Technology Strategy, Stakeholder Management, Banking experience."
+    )
+    state_path = str(tmp_path / "data" / "seen_jobs.json")
+    reports_dir = str(tmp_path / "reports")
+    applications_path = str(tmp_path / "data" / "applications.json")
+
+    result = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 9),
+        applications_path=applications_path,
+        gemini_api_key=None,
+    )
+
+    assert os.path.exists(applications_path)
+    apps = result["applications"]["applications"]
+    non_skip = [r for r in result["enriched"] if r["score"].decision != "Skip"]
+    assert len(apps) == len(non_skip) > 0
+    for record in apps.values():
+        assert record["stage"] == "Not Applied"
+        assert record["llm_error"] == "GEMINI_API_KEY not set"
+        assert record["priority_rank"] is not None
+
+    # A second run shouldn't clobber a stage change made in between.
+    apps_data = applications_mod.load(applications_path)
+    first_key = next(iter(apps_data["applications"]))
+    apps_data["applications"][first_key] = applications_mod.apply_stage_change(
+        apps_data["applications"][first_key], "Applied", today="2026-07-10"
+    )
+    applications_mod.save(applications_path, apps_data)
+
+    second = pipeline.run(
+        cv_dir=str(cv_dir),
+        state_path=state_path,
+        reports_dir=reports_dir,
+        sources=fixture_sources(),
+        role_families=["Enterprise Architect"],
+        http_session=FakeSession(),
+        today=date(2026, 7, 11),
+        force=True,
+        applications_path=applications_path,
+        gemini_api_key=None,
+    )
+    updated = second["applications"]["applications"][first_key]
+    assert updated["stage"] == "Applied"
+    assert updated["applied_date"] == "2026-07-10"

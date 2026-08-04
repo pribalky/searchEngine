@@ -22,6 +22,7 @@ from .sources.base import JobPosting
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CV_DIR = os.path.join(REPO_ROOT, "cv")
 STATE_PATH = os.path.join(REPO_ROOT, "data", "seen_jobs.json")
+APPLICATIONS_PATH = os.path.join(REPO_ROOT, "data", "applications.json")
 REPORTS_DIR = os.path.join(REPO_ROOT, "reports")
 FIXTURES_DIR = os.path.join(REPO_ROOT, "tests", "fixtures")
 
@@ -137,6 +138,11 @@ def main():
     # lookup only runs against live data.
     sponsor_names_fetcher = None if args.fixtures else fetch_live_sponsor_names
 
+    # Fixture/demo mode never spends real Gemini quota, same rationale as
+    # the sponsor-fetcher swap above: fixture postings are canned data, so
+    # an LLM call against them buys no signal.
+    gemini_api_key = None if args.fixtures else os.environ.get("GEMINI_API_KEY")
+
     result = pipeline.run(
         cv_dir=CV_DIR,
         state_path=STATE_PATH,
@@ -144,6 +150,8 @@ def main():
         sources=sources,
         force=args.force,
         sponsor_names_fetcher=sponsor_names_fetcher,
+        applications_path=APPLICATIONS_PATH,
+        gemini_api_key=gemini_api_key,
     )
 
     if result["skipped"]:

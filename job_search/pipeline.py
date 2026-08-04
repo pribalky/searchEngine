@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Set
 
 import requests
 
-from . import config, cv_loader, dedupe as dedupe_mod, report as report_mod, scoring, seniority, state as state_mod, tagging, verify
+from . import applications as applications_mod, config, cv_loader, dedupe as dedupe_mod, llm_analysis, report as report_mod, scoring, seniority, state as state_mod, tagging, verify
 from .sources.base import JobPosting
 
 DESCRIPTION_STORAGE_LIMIT = 3000
@@ -32,6 +32,10 @@ def run(
     today: Optional[date] = None,
     force: bool = False,
     sponsor_names_fetcher: Optional[Callable[[], Set[str]]] = None,
+    applications_path: Optional[str] = None,
+    gemini_api_key: Optional[str] = None,
+    gemini_model: str = llm_analysis.DEFAULT_MODEL,
+    llm_client_factory=None,
 ) -> dict:
     today = today or date.today()
     today_str = today.isoformat()
@@ -107,6 +111,12 @@ def run(
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report_markdown)
 
+    applications_result = None
+    if applications_path is not None:
+        applications_result = _sync_applications(
+            applications_path, enriched, cvs, today_str, gemini_api_key, gemini_model, llm_client_factory
+        )
+
     return {
         "skipped": False,
         "report_markdown": report_markdown,
@@ -115,7 +125,35 @@ def run(
         "excluded_count": len(excluded),
         "fetch_errors": fetch_errors,
         "enriched": enriched,
+        "applications": applications_result,
     }
+
+
+def _sync_applications(
+    applications_path: str,
+    enriched: List[dict],
+    cvs: dict,
+    today_str: str,
+    gemini_api_key: Optional[str],
+    gemini_model: str,
+    llm_client_factory,
+) -> dict:
+    """Analyzes only postings the tracker hasn't seen before (see
+    llm_analysis.analyze_many), then upserts everything non-Skip into
+    data/applications.json -- new postings get default tracking fields,
+    existing ones keep their stage/dates/notes untouched."""
+    eligible = [r for r in enriched if r["score"].decision != "Skip"]
+    existing = applications_mod.load(applications_path)
+    already_analyzed = set(existing["applications"].keys())
+    llm_results = llm_analysis.analyze_many(
+        eligible,
+        cvs,
+        already_analyzed_keys=already_analyzed,
+        api_key=gemini_api_key,
+        model=gemini_model,
+        client_factory=llm_client_factory,
+    )
+    return applications_mod.sync(applications_path, enriched, llm_results, today=today_str)
 
 
 def _passes_filters(posting: JobPosting) -> bool:
