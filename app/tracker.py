@@ -13,6 +13,10 @@ edits are committed back to the repo via the GitHub Contents API instead.
 Set GITHUB_TOKEN (a fine-grained PAT scoped to this repo, Contents:
 read/write only) and GITHUB_REPOSITORY (owner/repo) as app secrets --
 see app/README.md.
+
+Also supports manually adding a posting the pipeline missed (a URL to
+fetch, or pasted JD text) -- requires GEMINI_API_KEY as an app secret (or
+local env var) the same as the pipeline does.
 """
 import base64
 import json
@@ -26,10 +30,11 @@ import streamlit as st
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
-from job_search import applications as applications_mod  # noqa: E402
+from job_search import applications as applications_mod, cv_loader, llm_analysis, manual_intake  # noqa: E402
 
 DATA_PATH = os.path.join(REPO_ROOT, "data", "applications.json")
 CONTENTS_PATH = "data/applications.json"
+CV_DIR = os.path.join(REPO_ROOT, "cv")
 KEY_COLUMN = "_key"
 
 # Order here is display order. Anything not listed (llm_error, first_seen,
@@ -39,6 +44,7 @@ DISPLAY_COLUMNS = [
     "priority_rank",
     "company",
     "title",
+    "source",
     "stage",
     "interview_probability",
     "llm_worth_applying",
@@ -63,6 +69,7 @@ COLUMN_LABELS = {
     "priority_rank": "Priority",
     "company": "Company",
     "title": "Title",
+    "source": "Source",
     "stage": "Stage",
     "interview_probability": "Interview Prob. %",
     "llm_worth_applying": "Worth Applying",
@@ -89,10 +96,12 @@ def _secret(name):
         return None
 
 
+def _secret_or_env(name):
+    return _secret(name) or os.environ.get(name)
+
+
 def _github_config():
-    token = _secret("GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN")
-    repo = _secret("GITHUB_REPOSITORY") or os.environ.get("GITHUB_REPOSITORY")
-    return token, repo
+    return _secret_or_env("GITHUB_TOKEN"), _secret_or_env("GITHUB_REPOSITORY")
 
 
 def _load_data():
@@ -162,6 +171,47 @@ def _render_spend_summary(spend_log: list) -> None:
     st.caption("Estimate only, placeholder pricing -- see .env.example. Per-run detail in data/applications.json's llm_spend_log.")
 
 
+def _render_manual_add(data: dict, sha) -> None:
+    """A posting the automated pipeline missed: fetch a URL, or paste the
+    JD text directly, and it gets the same rule-based scoring plus one
+    Gemini call (extraction + fit analysis) as everything else, then is
+    force-included into the tracker regardless of how it scores -- a
+    deliberate manual add shouldn't be silently dropped for scoring low,
+    unlike auto-discovered postings (see manual_intake.py)."""
+    with st.expander("+ Add a posting manually", expanded=False):
+        st.caption("Fill in one of the two fields below, not both. The paste field is the fallback for pages a fetch can't read (JS-rendered, behind a login, etc).")
+        url = st.text_input("Job posting URL", key="manual_url")
+        jd_text = st.text_area("Or paste the job description text", key="manual_jd_text", height=150)
+
+        if st.button("Add & Analyze"):
+            cvs = cv_loader.load_cvs(CV_DIR)
+            if not cvs:
+                st.error("No CVs found in cv/ -- can't score a manual posting without at least one.")
+                return
+            if not url.strip() and not jd_text.strip():
+                st.warning("Provide a URL or paste the job description text.")
+                return
+
+            api_key = _secret_or_env("GEMINI_API_KEY")
+            model = _secret_or_env("GEMINI_MODEL") or llm_analysis.DEFAULT_MODEL
+            with st.spinner("Fetching and analyzing..."):
+                outcome = manual_intake.build_manual_record(cvs, url=url, jd_text=jd_text, api_key=api_key, model=model)
+
+            if not outcome["ok"]:
+                st.error(outcome["error"])
+                return
+
+            llm_results = {outcome["record"]["posting"].key: outcome["llm_result"]}
+            spend = llm_analysis.summarize_spend(llm_results)
+            applications_mod.upsert(data, [outcome["record"]], llm_results, llm_spend=spend, force_include=True)
+            _save_data(data, sha)
+            st.success(
+                f"Added: {outcome['title']} @ {outcome['company']} -- {outcome['decision']} "
+                f"({outcome['interview_probability']}% interview probability, Gemini says {outcome['worth_applying']})"
+            )
+            st.rerun()
+
+
 def render() -> None:
     st.set_page_config(page_title="Job Application Tracker", layout="wide")
     st.title("Job Application Tracker")
@@ -173,9 +223,10 @@ def render() -> None:
     data, sha = _load_data()
     apps = data.get("applications", {})
     _render_spend_summary(data.get("llm_spend_log", []))
+    _render_manual_add(data, sha)
 
     if not apps:
-        st.info("No tracked applications yet -- run the job_search pipeline to populate this tracker.")
+        st.info("No tracked applications yet -- run the job_search pipeline, or add one manually above.")
         return
 
     df = _to_dataframe(apps)

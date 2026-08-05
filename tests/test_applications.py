@@ -150,6 +150,41 @@ def test_sync_without_llm_spend_leaves_log_unset(tmp_path):
     assert "llm_spend_log" not in data
 
 
+def test_upsert_operates_on_in_memory_data_without_file_io(tmp_path):
+    data = {"schema_version": 1, "applications": {}}
+    result = applications.upsert(data, [_make_record()], llm_results={}, today="2026-07-09")
+    assert result is data  # mutated and returned in place, no file touched
+    assert "adzuna:1" in data["applications"]
+    assert not (tmp_path / "applications.json").exists()
+
+
+def test_sync_is_a_thin_wrapper_around_upsert(tmp_path):
+    path = str(tmp_path / "applications.json")
+    via_sync = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-09")
+    assert via_sync["applications"]["adzuna:1"]["company"] == "GoodCo"
+    # File was actually written (sync's job beyond upsert).
+    assert applications.load(path)["applications"]["adzuna:1"]["company"] == "GoodCo"
+
+
+def test_force_include_bypasses_skip_filter(tmp_path):
+    path = str(tmp_path / "applications.json")
+    skip_record = _make_record(decision="Skip", interview_probability=10)
+    data = applications.sync(path, [skip_record], llm_results={}, today="2026-07-09", force_include=True)
+    assert "adzuna:1" in data["applications"]
+    assert data["applications"]["adzuna:1"]["decision"] == "Skip"
+
+
+def test_force_include_still_ranks_forced_records_by_priority(tmp_path):
+    path = str(tmp_path / "applications.json")
+    records = [
+        _make_record(source_id="1", interview_probability=10, decision="Skip"),
+        _make_record(source_id="2", interview_probability=80, decision="Priority Apply"),
+    ]
+    data = applications.sync(path, records, llm_results={}, today="2026-07-09", force_include=True)
+    assert data["applications"]["adzuna:2"]["priority_rank"] == 1
+    assert data["applications"]["adzuna:1"]["priority_rank"] == 2
+
+
 def test_save_and_load_round_trip(tmp_path):
     path = str(tmp_path / "nested" / "applications.json")
     data = applications.sync(path, [_make_record()], llm_results={}, today="2026-07-09")
